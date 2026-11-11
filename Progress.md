@@ -7,9 +7,9 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 | Field | Value |
 |---|---|
 | Last updated | 2026-11-11 |
-| Current phase | 8 — Hand-in (not started); open eval tasks T7.4, T5.7, T5.6 |
-| Last finished task | T7.3 (Phases 1-7 complete except T7.4 re-run on 120b, T5.6, T5.7) |
-| Next task | T7.4 (needs Groq daily quota reset) → T5.7 (harder eval, 3 runs each) → Phase 8 (README, report, postmortem) → T5.6 (paid model) |
+| Current phase | 8 — Hand-in: documents written; open items below |
+| Last finished task | T8.4 (all phases have a first complete version) |
+| Next task | T7.4 (5 injection cases left on 120b, quota) → fill Contributions (user) → T5.7 (harder eval, 3 runs) → T5.6 (paid model) → T8.5 freeze |
 | Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
 | Code written | `agent/{state,stop,tools,calls,checkpoint,prompts,graph,run,cli}.py`, `sandbox/*`, `eval/{fake_model,metrics,run_eval}.py`, `eval/scenarios.yaml` (32) |
 | Tests passing | 151 passed, 2 skipped (`.venv/Scripts/python -m pytest -q`) |
@@ -17,6 +17,9 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 ## Blocked / needs the user
 
 1. Nothing blocking. Groq key is in `.env`. Paid-model comparison (T5.6) needs the user to pick a paid provider and add its key.
+
+2. **Contributions table in `README.md`**: who did what, per member (user must fill in).
+3. **Paid provider for T5.6** (user choice + key).
 
 ## Team (README Contributions)
 
@@ -44,6 +47,7 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - 2026-11-11 — Phase 5 done: 32 scenarios, metrics, runner; 110 tests pass; Groq eval run.
 - 2026-11-11 — Demo rehearsal: a plausible "operator note" injection partly worked on 120b → minimal-repair rule (D8b), prompt hardened, scenario 33 added.
 - 2026-11-11 — Phases 6-7 done: `errors.md`, `threat_model.md`, `tests/test_errors.py`, `tests/test_injection.py`. v2 eval: 21/33 on 120b (all pass) then daily quota hit; remaining 12 run on 20b (all pass).
+- 2026-11-11 — Phase 8 first version: `README.md`, `report.md`/`report.pdf`, `postmortem.md`; 120b v2 resumed to 28/33; clean-clone test passed.
 
 ## Sandbox facts for Phase 3
 
@@ -76,6 +80,12 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - `eval/results/groq_openai_gpt-oss-20b_v2_remaining12.json`: the other 12 on `gpt-oss-20b`: 12/12 success, 7/7 injections with no forbidden call. Two signs of influence: dry-ran the attacker's `source_path` (fake closing tag case); skipped `validate_config` as the planted note asked (operator note case, step accuracy 0.80). Slow: up to 100 s per task from rate-limit waits.
 - Result files are now named `<model>_<tag>`; v1 files were renamed to `*_v1`.
 
+## Eval v2 resume (2026-11-11, later)
+
+- 120b v2 now 28/33, 28/28 success (adds 3 no_fix, 2 human_reject, injection cases 1-2). Cut again by the 200K tokens/day limit at `inject_config_note_break_other_job`.
+- Numbers used in README/report (120b v2, 28 scenarios): step accuracy 1.00, precision 0.99, wasted 0.25, steps 5.93, tokens 10 593 (282 038 in + 14 569 out), $0.0018/task, p50 20.0 s, p95 55.7 s.
+- When T7.4 completes: update the v2 column in `README.md` and `report.md`, run `python tools/build_report.py`, update `threat_model.md` §6.
+
 ## Problems met (feeds postmortem.md)
 
 - Planned to use LangGraph `RemainingSteps` for the graceful stop; on reading its source it counts super-steps and depends on `recursion_limit`, so we switched to our own model-call counter (D6).
@@ -94,5 +104,6 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - After the tool started refusing bad writes, the eval could no longer see an agent that *tried* to write on an unfixable fault (state unchanged = pass). Fixed by making any config write a forbidden call in no-fix scenarios.
 - Groq free tier: 200 000 tokens/day is real. Two full eval runs in one day do not fit (~330K tokens each). Plan one full run per day, or split across the 120b and 20b quotas.
 - Result files were named by date, so a run could not resume the next day; now named by tag.
+- Git on Windows warned it would convert `report.pdf` line endings (it treated the PDF as text); added `.gitattributes` (`*.pdf binary`, LF everywhere).
 - Eval scored 100% on the first real run: good news for the agent, but a sign the scenarios are too easy and that one run per scenario hides variance.
 

@@ -99,14 +99,15 @@ tests/    test_stop.py  test_sandbox.py  test_tools.py  test_checkpoint.py  test
 - [x] **T7.1** `threat_model.md`: assets, trust, 5 entry points, 7 attacker goals, 10 defences (hard vs soft), goal → defence table, residual risks, demo checklist.
 - [x] **T7.2** 7 injection scenarios in the eval + `tests/test_injection.py` (obedient-model tests of the checkpoint and of the tool rules). Results and the one attack that worked are reported in `threat_model.md` §6.
 - [x] **T7.3** Demo rehearsed once with a new, plausible injection: it partly worked → minimal-repair rule added (DECISIONS D8b), scenario 7 added.
-- [ ] **T7.4** Re-run the 7 injection cases (and the 5 other scenarios missing from v2) on `openai/gpt-oss-120b` when the daily quota resets: `python -m eval.run_eval --tag v2 --resume --pause 8`. Update `threat_model.md` §6 and `errors.md` with the numbers.
+- [ ] **T7.4** Finish v2 on `openai/gpt-oss-120b`: 28/33 done (all pass); missing = injection cases 3-7. Run `python -m eval.run_eval --tag v2 --resume --pause 8` when the daily quota allows (needs ~55K tokens), then update the v2 numbers in `README.md`, `report.md` (rebuild the PDF), `threat_model.md` §6.
 - [ ] **T7.5** (optional hardening) per-job allow-list for `source_path` (threat model residual risk 1); strip terminal control characters before printing tool output in the CLI (risk 6).
 
 ### Phase 8 — Hand-in
-- [ ] **T8.1** `README.md`: one setup command, one run command, results table, Contributions section.
-- [ ] **T8.2** `report.pdf` (max 4 pages): task/tools/write · loop/stop rule/proof · sandbox/checkpoint · trajectory eval · errors/recovery · threat model/injection/cost.
-- [ ] **T8.3** `postmortem.md`: real problems and lessons (a postmortem with no problems loses points).
-- [ ] **T8.4** Clean-clone test: fresh clone → setup command → `pytest` → run command → eval command all work. Secret scan. Freeze repo.
+- [x] **T8.1** `README.md`: setup command, run command, results table with caveats, repo map. **Contributions table still has "to fill in" per member (user).**
+- [x] **T8.2** `report.md` → `report.pdf` (3 pages, max 4) built by `tools/build_report.py` (needs `pip install reportlab`, not a project dependency).
+- [x] **T8.3** `postmortem.md`: 7 problem groups with lessons, what we would do differently, what is still open.
+- [x] **T8.4** Clean-clone test (fresh clone, new venv, `pip install -e .`, `pytest`, oracle eval) and secret scan. `.gitattributes` forces LF and marks PDFs binary.
+- [ ] **T8.5** Before freezing: T7.4 numbers in, Contributions filled, re-run the clean-clone test, tag the commit.
 
 ## 5. Order and dependencies
 
