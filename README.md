@@ -99,12 +99,16 @@ Raw results: `eval/results/` (`*_v3.json` is the merged run; `*_v3_after_fix_*.j
 
 Team: Alaaeddine Bousselmi, Mohamed Amine Zouaoui, Seifeddine Knani, Walid Fakhfakh.
 
-| Member | Contribution |
-|---|---|
-| Alaaeddine Bousselmi | _to fill in_ |
-| Mohamed Amine Zouaoui | _to fill in_ |
-| Seifeddine Knani | _to fill in_ |
-| Walid Fakhfakh | _to fill in_ |
+Each member owns one area: they reviewed and tested it, keep it working, and explain it at the demo.
+
+| Member | Area owned | Files | Explains at the demo |
+|---|---|---|---|
+| Alaaeddine Bousselmi | The agent loop: graph, stop rule, human checkpoint, command line. Repository, integration and eval runs. | `agent/graph.py`, `agent/stop.py`, `agent/checkpoint.py`, `agent/run.py`, `agent/cli.py`, `tests/test_stop.py`, `tests/test_checkpoint.py` | How the loop runs and why it always stops; the approval pause |
+| Mohamed Amine Zouaoui | Tools and sandbox: schemas, idempotent writes, write rules, error messages, the mini pipeline and its faults. Error taxonomy. | `agent/tools.py`, `agent/calls.py`, `sandbox/`, `tests/test_tools.py`, `tests/test_sandbox.py`, `tests/test_errors.py`, `errors.md` | What each tool does, what a write changes, how the sandbox resets |
+| Seifeddine Knani | Evaluation: scenarios, trajectory metrics, runners, results and cost model. | `eval/`, `tests/test_eval.py`, results section of `README.md` and `report.md` | How a run is scored, the results and their limits, the cost model |
+| Walid Fakhfakh | Security: threat model, injection cases and tests, prompt and data/instruction separation. Postmortem and report. | `threat_model.md`, `agent/prompts.py`, `tests/test_injection.py`, `postmortem.md`, `report.md` | The two attacks that worked, the defences, the live injection attempt |
+
+Design decisions (`DECISIONS.md`) were discussed and agreed by the whole team.
 
 AI assistance: the code and documents were written with Claude Code; the team reviewed them and is responsible for every line.
 

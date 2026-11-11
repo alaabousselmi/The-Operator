@@ -9,7 +9,7 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 | Last updated | 2026-11-11 |
 | Current phase | 8 — Hand-in: everything has a complete version with v3 numbers |
 | Last finished task | T5.7 + T7.5 (v3 eval, routing-key rule, all documents updated) |
-| Next task | Contributions table (user) → T8.5 freeze (clean-clone test, tag). Optional: T5.6 paid-model comparison, two-jobs-failing scenario, CLI control-character stripping |
+| Next task | Next-week plan in `Tasks.md` section 4b: N1 freeze code → N2 final eval (v4) on frozen code → N3 member reviews → N4 demo rehearsal → N6 hand-in |
 | Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
 | Code written | `agent/{state,stop,tools,calls,checkpoint,prompts,graph,run,cli}.py`, `sandbox/*`, `eval/{fake_model,metrics,run_eval}.py`, `eval/scenarios.yaml` (32) |
 | Tests passing | 167 passed, 2 skipped (`.venv/Scripts/python -m pytest -q`) |
@@ -18,7 +18,7 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 
 1. Nothing blocking. Groq key is in `.env`. Paid-model comparison (T5.6) needs the user to pick a paid provider and add its key.
 
-2. **Contributions table in `README.md`**: who did what, per member (user must fill in).
+2. **Contributions table**: filled as area ownership (who reviews, maintains and presents what), not as a record of who wrote each line. The user should correct it if the real split differs.
 3. **Paid provider for T5.6** (user choice + key).
 
 ## Team (README Contributions)
