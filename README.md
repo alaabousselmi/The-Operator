@@ -1,6 +1,6 @@
 # The Operator - data pipeline repair agent
 
-CS496 AI Engineering, Project 3. An agent that finds a failed pipeline job, reads its logs, diagnoses the cause, fixes the job's config and re-runs it — inside a resettable sandbox, with a human approving every write. Built with LangGraph.
+CS496 AI Engineering, Project 3. An agent that finds a failed pipeline job, reads its logs, diagnoses the cause, fixes the job's config and re-runs it inside a resettable sandbox, with a human approving every write. Built with LangGraph.
 
 ## Setup (one command)
 
