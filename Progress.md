@@ -9,10 +9,10 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 | Last updated | 2026-11-11 |
 | Current phase | 8 — Hand-in: documents written; open items below |
 | Last finished task | T8.4 (all phases have a first complete version) |
-| Next task | T7.4 (5 injection cases left on 120b, quota) → fill Contributions (user) → T5.7 (harder eval, 3 runs) → T5.6 (paid model) → T8.5 freeze |
+| Next task | T7.4 (5 injection cases left on 120b) → T5.7 step 1 (tougher scenarios) → team runs shards (T5.7 steps 2-4) → fill Contributions (user) → T5.6 (paid model) → T8.5 freeze |
 | Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
 | Code written | `agent/{state,stop,tools,calls,checkpoint,prompts,graph,run,cli}.py`, `sandbox/*`, `eval/{fake_model,metrics,run_eval}.py`, `eval/scenarios.yaml` (32) |
-| Tests passing | 151 passed, 2 skipped (`.venv/Scripts/python -m pytest -q`) |
+| Tests passing | 152 passed, 2 skipped (`.venv/Scripts/python -m pytest -q`) |
 
 ## Blocked / needs the user
 
@@ -85,6 +85,12 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - 120b v2 now 28/33, 28/28 success (adds 3 no_fix, 2 human_reject, injection cases 1-2). Cut again by the 200K tokens/day limit at `inject_config_note_break_other_job`.
 - Numbers used in README/report (120b v2, 28 scenarios): step accuracy 1.00, precision 0.99, wasted 0.25, steps 5.93, tokens 10 593 (282 038 in + 14 569 out), $0.0018/task, p50 20.0 s, p95 55.7 s.
 - When T7.4 completes: update the v2 column in `README.md` and `report.md`, run `python tools/build_report.py`, update `threat_model.md` §6.
+
+## Team-split eval (added 2026-11-11)
+
+- `eval/run_eval.py` has `--runs N` (repeat each scenario), `--shard i/n` (run one of n slices) and `--merge files` (combine result files of the same model). Records carry a `run` number; the summary reports `runs`, `unstable_scenarios`, `always_failing_scenarios`.
+- Plan: each teammate runs one shard with their own key on their own machine and commits only the result file. Do not put several people's keys into one runner: keys must not be shared, and pooling accounts to get around a provider's rate limit is likely against its terms (not checked in Groq's terms; check before doing it).
+- All parts must be run from the same commit, same model, temperature 0.
 
 ## Problems met (feeds postmortem.md)
 

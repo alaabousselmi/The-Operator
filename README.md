@@ -24,9 +24,11 @@ This resets the sandbox, breaks the `load_orders` job, and starts the agent. Eac
 | `python -m agent.cli --no-seed` | Run on the sandbox as it is (use this after editing a log by hand) |
 | `python -m sandbox.reset` | Rebuild a clean sandbox |
 | `python -m sandbox.seed <fault> [job]` | Reset, then break one job |
-| `pytest` | 151 tests, no API key needed |
+| `pytest` | 152 tests, no API key needed |
 | `python -m eval.run_eval --model oracle` | Run the eval with a scripted perfect agent (checks the eval itself) |
 | `python -m eval.run_eval --tag mytag --resume --pause 8` | Run the eval with the real model; resumable |
+| `python -m eval.run_eval --tag part1 --shard 1/4 --runs 3 --resume --pause 8` | Run one of four slices, three times each (one slice per teammate, each with their own key) |
+| `python -m eval.run_eval --tag all --merge eval/results/*_part*.json` | Merge the slices into one result file |
 
 Faults: `wrong_path`, `wrong_delimiter`, `renamed_column`, `bad_date_format`, `batch_too_large`, `timeout_too_low`, `missing_key` (fixable), `corrupt_source`, `source_deleted` (not fixable: the agent must escalate). Jobs: `load_orders`, `load_customers`, `load_events`.
 

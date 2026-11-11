@@ -168,10 +168,17 @@ def write_report(path: Path, summary: dict, records: list) -> None:
               "|---|---|---|---|---|---|---|---|---|"]
     for r in records:
         lines.append(
-            f"| {r['id']} | {r['category']} | {'yes' if r['success'] else 'NO'} | {r['step_accuracy']:.2f} | "
+            f"| {r['id']}{' #' + str(r['run']) if r.get('run', 1) > 1 else ''} | {r['category']} | {'yes' if r['success'] else 'NO'} | {r['step_accuracy']:.2f} | "
             f"{r['tool_call_precision']:.2f} | {r['wasted_steps']} | {r['steps']} | {r['stop_reason']} | {r['final_state']} |"
         )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def save(json_path: Path, records: list, name: str) -> dict:
+    summary = summarise(records, name)
+    json_path.write_text(json.dumps({"summary": summary, "records": records}, indent=2))
+    write_report(json_path.with_suffix(".md"), summary, records)
+    return summary
 
 
 def main() -> None:
@@ -181,41 +188,59 @@ def main() -> None:
     parser.add_argument("--resume", action="store_true", help="keep the results already in the file and run only what is missing")
     parser.add_argument("--pause", type=float, default=0, help="seconds to wait between scenarios")
     parser.add_argument("--tag", default="", help="name the results file <model>_<tag> instead of <model>_<date>")
+    parser.add_argument("--runs", type=int, default=1, help="how many times to run each scenario")
+    parser.add_argument("--shard", default="1/1", help="i/n: run only the i-th of n equal slices of the suite, "
+                        "so that n teammates can each run one slice with their own key")
+    parser.add_argument("--merge", nargs="+", metavar="FILE", help="do not run anything: merge these result files "
+                        "(same model) into the file named by --tag")
     args = parser.parse_args()
 
     load_dotenv()
     name = args.model or os.environ.get("OPERATOR_MODEL", "groq:openai/gpt-oss-120b")
+    RESULTS.mkdir(exist_ok=True)
+    label = name.replace(":", "_").replace("/", "_")
+    json_path = RESULTS / f"{label}_{args.tag or date.today()}.json"  # a tag lets a run resume on another day
+
+    if args.merge:
+        parts = [json.loads(Path(file).read_text()) for file in args.merge]
+        assert all(part["summary"]["model"] == name for part in parts), "result files are from different models"
+        merged = {(r["id"], r.get("run", 1)): r for part in parts for r in part["records"]}  # no duplicates
+        print(json.dumps(save(json_path, list(merged.values()), name), indent=2))
+        return
+
     model = None
     if name != "oracle":
         from langchain.chat_models import init_chat_model
         model = init_chat_model(name, temperature=0, max_retries=5)
 
-    RESULTS.mkdir(exist_ok=True)
-    label = name.replace(":", "_").replace("/", "_")
-    json_path = RESULTS / f"{label}_{args.tag or date.today()}.json"  # a tag lets a run resume on another day
     records = json.loads(json_path.read_text())["records"] if args.resume and json_path.exists() else []
-    done = {record["id"] for record in records}
+    done = {(record["id"], record.get("run", 1)) for record in records}
     wanted = set(filter(None, args.only.split(",")))
+    shard, shards = (int(part) for part in args.shard.split("/"))
+    todo = [
+        (scenario, run)
+        for run in range(1, args.runs + 1)
+        for position, scenario in enumerate(load_scenarios())
+        if position % shards == shard - 1
+        and (scenario["id"], run) not in done
+        and (not wanted or scenario["id"] in wanted)
+    ]
 
-    for scenario in load_scenarios():
-        if scenario["id"] in done or (wanted and scenario["id"] not in wanted):
-            continue
+    for scenario, run in todo:
         try:
             record = run_scenario(scenario, model)
         except Exception as error:  # e.g. the provider's daily quota: keep what we have
-            print(f"STOPPED at {scenario['id']}: {type(error).__name__}: {str(error)[:200]}")
+            print(f"STOPPED at {scenario['id']} (run {run}): {type(error).__name__}: {str(error)[:200]}")
             break
+        record["run"] = run
         records.append(record)
-        print(f"{'PASS' if record['success'] else 'FAIL'} {record['id']:42} steps={record['steps']} "
+        print(f"{'PASS' if record['success'] else 'FAIL'} {record['id']:42} run={run} steps={record['steps']} "
               f"acc={record['step_accuracy']:.2f} stop={record['stop_reason']} ({record['final_state']})")
-        # Save after every scenario so an interrupted run can be resumed.
-        json_path.write_text(json.dumps({"summary": summarise(records, name), "records": records}, indent=2))
+        save(json_path, records, name)  # after every scenario, so an interrupted run can be resumed
         time.sleep(args.pause)
 
     if records:
-        summary = summarise(records, name)
-        write_report(json_path.with_suffix(".md"), summary, records)
-        print(json.dumps(summary, indent=2))
+        print(json.dumps(summarise(records, name), indent=2))
 
 
 if __name__ == "__main__":

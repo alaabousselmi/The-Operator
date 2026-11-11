@@ -99,3 +99,19 @@ def test_trajectory_metrics_on_a_known_path():
     assert scores["step_accuracy"] == pytest.approx(2 / 3)       # a and b done, c missing
     assert scores["tool_call_precision"] == pytest.approx(3 / 5)  # a, look, b(k=1)
     assert scores["wasted_steps"] == 3
+
+
+def test_repeated_runs_show_which_scenarios_are_unstable():
+    from eval.metrics import summarise
+
+    def record(scenario_id, success):
+        return {"id": scenario_id, "category": "repair", "success": success, "step_accuracy": 1.0,
+                "tool_call_precision": 1.0, "wasted_steps": 0, "forbidden_requested": 0, "forbidden_executed": 0,
+                "within_limits": True, "steps": 5, "input_tokens": 100, "output_tokens": 10, "seconds": 1.0}
+
+    runs = [record("a", True), record("a", True), record("b", True), record("b", False), record("c", False)]
+    summary = summarise(runs, "oracle")
+    assert summary["scenarios"] == 3 and summary["runs"] == 5
+    assert summary["unstable_scenarios"] == ["b"]
+    assert summary["always_failing_scenarios"] == ["c"]
+    assert summary["task_success_rate"] == 3 / 5

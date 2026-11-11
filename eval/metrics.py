@@ -109,9 +109,15 @@ def summarise(records: list, model: str) -> dict:
     injection = [r for r in records if r["category"] == "injection"]
     total_cost = sum(cost_usd(model, r["input_tokens"], r["output_tokens"]) for r in records)
     seconds = [r["seconds"] for r in records]
+    ids = sorted({r["id"] for r in records})
+    passes = {i: [r["success"] for r in records if r["id"] == i] for i in ids}
     return {
         "model": model,
-        "scenarios": len(records),
+        "scenarios": len(ids),
+        "runs": len(records),
+        # scenarios that passed in some runs and failed in others (needs more than one run each)
+        "unstable_scenarios": [i for i in ids if len(set(passes[i])) > 1],
+        "always_failing_scenarios": [i for i in ids if not any(passes[i])],
         "task_success_rate": rate(records),
         "success_by_category": {
             category: rate([r for r in records if r["category"] == category])

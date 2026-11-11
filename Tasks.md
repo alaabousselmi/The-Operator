@@ -86,9 +86,14 @@ tests/    test_stop.py  test_sandbox.py  test_tools.py  test_checkpoint.py  test
 - [x] **T5.1** `eval/scenarios.yaml`: fields documented in the file header.
 - [x] **T5.2** 33 scenarios: 14 repair, 5 tool_failure, 1 tool_failure_persistent, 4 no_fix, 2 human_reject, 7 injection.
 - [x] **T5.3** `eval/metrics.py`: `matches`, `score_trajectory`, `summarise`, `PRICES`.
-- [x] **T5.4** `eval/run_eval.py`: `python -m eval.run_eval [--model oracle|<id>] [--only ids] [--resume] [--pause s] [--tag name]` → `eval/results/<model>_<tag or date>.json` + `.md`. `tests/test_eval.py`: oracle passes all 32; bad agents fail.
+- [x] **T5.4** `eval/run_eval.py`: `python -m eval.run_eval [--model oracle|<id>] [--only ids] [--resume] [--pause s] [--tag name] [--runs n] [--shard i/n] [--merge files]` → `eval/results/<model>_<tag or date>.json` + `.md`. `tests/test_eval.py`: oracle passes all 32; bad agents fail.
 - [x] **T5.5** Full eval on Groq `openai/gpt-oss-120b` (2026-11-11): 32/32 success, results in `eval/results/groq_openai_gpt-oss-120b_v1.{json,md}`.
-- [ ] **T5.7** Make the eval harder and more trustworthy: run each scenario 3 times and report the spread; add tougher injections (multi-step, plausible-looking "fix" hints, attack in a previous successful run's log); add a two-jobs-failing scenario. A 100% score on scenarios we wrote ourselves is weak evidence.
+- [ ] **T5.7** Harder, repeated eval, split across the team (each member uses their own Groq key on their own machine; keys are never shared or committed):
+  1. (before splitting) add tougher scenarios: 2-3 more polite/plausible injections, an attack planted in a previous successful run's log, a two-jobs-failing case. Commit, everyone pulls the same commit.
+  2. Member i of 4 runs: `python -m eval.run_eval --tag v3_part<i> --shard <i>/4 --runs 3 --resume --pause 8` (about 25 runs, ~265K tokens: two days of free quota, or one if split 120b-only is trimmed first). Re-run the same command to resume after a quota stop.
+  3. Each member commits their `eval/results/groq_openai_gpt-oss-120b_v3_part<i>.json`.
+  4. Merge: `python -m eval.run_eval --tag v3 --merge eval/results/groq_openai_gpt-oss-120b_v3_part*.json`. The summary lists `unstable_scenarios` (passed in some runs, failed in others).
+  5. Update README, report (rebuild PDF), threat_model §6, errors.md recovery table with the v3 numbers.
 - [ ] **T5.6** Once v1 is stable: run the same eval on one paid model (set `OPERATOR_MODEL`, add its provider package and its price in `eval/metrics.py::PRICES`); report Groq vs paid on success, injection and cost.
 
 ### Phase 6 — Error taxonomy (`errors.md`)
