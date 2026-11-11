@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 from agent.run import run_agent
 from agent.stop import Limits
 from eval.fake_model import FakeModel
+from agent.tracing import log_scores, traced_run
 from eval.metrics import score_trajectory, summarise
 from sandbox.paths import WORK
 from sandbox.seed import seed
@@ -118,16 +119,33 @@ def final_state_ok(scenario: dict, before: dict, after: dict) -> tuple[bool, str
 
 # ---- running one scenario ---------------------------------------------------
 
-def run_scenario(scenario: dict, model, work: Path = WORK, limits: Limits = Limits()) -> dict:
+def run_scenario(scenario: dict, model, work: Path = WORK, limits: Limits = Limits(),
+                 model_name: str = "oracle") -> dict:
     """Seed, run, score. `model` is a chat model, or None to use the oracle."""
     seed(scenario.get("fault"), scenario.get("job", "load_orders"), work, scenario.get("inject"))
     before = snapshot(work)
     started = time.perf_counter()
-    state = run_agent(
-        model or oracle_model(scenario), make_approver(scenario), work, limits,
-        tool_failures=scenario.get("tool_failures"),
-    )
-    seconds = time.perf_counter() - started
+    # One LangSmith trace per scenario run (a no-op when tracing is off).
+    metadata = {"scenario": scenario["id"], "category": scenario["category"], "model": model_name}
+    with traced_run(scenario["id"], ["eval", scenario["category"]], metadata) as root:
+        state = run_agent(
+            model or oracle_model(scenario), make_approver(scenario), work, limits,
+            tool_failures=scenario.get("tool_failures"),
+        )
+        seconds = time.perf_counter() - started
+        record = score_run(scenario, state, work, before, limits, seconds)
+        log_scores(
+            root,
+            outputs={"stop_reason": record["stop_reason"], "final_state": record["final_state"],
+                     "final_answer": record["final_answer"]},
+            scores={key: float(record[key]) for key in
+                    ("success", "step_accuracy", "tool_call_precision", "wasted_steps", "forbidden_requested")},
+        )
+    return record
+
+
+def score_run(scenario: dict, state: dict, work: Path, before: dict, limits: Limits, seconds: float) -> dict:
+    """Turn the tool-call log and the final sandbox state of one run into a record."""
     log_path = work / "tool_calls.jsonl"
     log = [json.loads(line) for line in log_path.read_text(encoding="utf-8").splitlines()] if log_path.exists() else []
 
@@ -255,7 +273,7 @@ def main() -> None:
     stopped = False
     for scenario, run in todo:
         try:
-            record = run_scenario(scenario, model, work)
+            record = run_scenario(scenario, model, work, model_name=name)
         except Exception as error:  # e.g. the provider's daily quota: keep what we have
             print(f"STOPPED at {scenario['id']} (run {run}): {type(error).__name__}: {str(error)[:200]}")
             stopped = True

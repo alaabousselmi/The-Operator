@@ -9,7 +9,7 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 | Last updated | 2026-11-11 |
 | Current phase | 8 — Hand-in: everything has a complete version with v3 numbers |
 | Last finished task | T5.7 + T7.5 (v3 eval, routing-key rule, all documents updated) |
-| Next task | Next-week plan in `Tasks.md` section 4b: N1 freeze code → N2 final eval (v4) on frozen code → N3 member reviews → N4 demo rehearsal → N6 hand-in |
+| Next task | T9.3 (user: LangSmith key in `.env`) → T9.4 (verify traces + feedback with the real key) → next-week plan `Tasks.md` 4b (N1 freeze → N2 final eval v4 with tracing → N3 reviews → N4 rehearsal → N6 hand-in) |
 | Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
 | Code written | `agent/{state,stop,tools,calls,checkpoint,prompts,graph,run,cli}.py`, `sandbox/*`, `eval/{fake_model,metrics,run_eval}.py`, `eval/scenarios.yaml` (32) |
 | Tests passing | 167 passed, 2 skipped (`.venv/Scripts/python -m pytest -q`) |
@@ -107,7 +107,16 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - The full suite has NOT been re-run after the routing-key rule (only the 6 affected scenarios). A full re-run needs ~865K tokens across the keys.
 - Files: `eval/results/groq_openai_gpt-oss-120b_v3.json` (merged), `*_v3_key<n>.json` (per key), `*_v3_after_fix_a/b.json`.
 
+## LangSmith (2026-11-11)
+
+- Professor requires LangGraph to be highlighted and LangSmith to be used. LangSmith was not used before today.
+- Added `agent/tracing.py` (see DECISIONS D11). Env vars: `LANGSMITH_TRACING`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT`. No LangSmith key in `.env` yet.
+- Offline check (LangSmith client pointed at a local server): one trace per scenario run, 3 `LangGraph` invocations and nodes `llm/router/approval/tools/finalize` under it. NOT verified: the `create_feedback` call needs the real project id (`read_project`), so scores-on-trace is untested against the real service. SDK warns that feedback without `session_id` is deprecated; we pass it.
+- Docs note: current LangSmith docs describe an "agent workspace" mode with `LANGSMITH_AGENT_ID` instead of `LANGSMITH_PROJECT`; we use the project mode. If the user's workspace is the agent kind, adjust `.env` per the LangSmith setup page.
+- Free plan: 5 000 base traces/month, 14-day retention. A full eval = 83 traces.
+
 ## Problems met (feeds postmortem.md)
+- LangSmith was a course requirement we only learned about after the eval was done: the v3 run has no traces. The final run (v4) must be traced.
 
 - Planned to use LangGraph `RemainingSteps` for the graceful stop; on reading its source it counts super-steps and depends on `recursion_limit`, so we switched to our own model-call counter (D6).
 - The doc pages did not show `ToolNode(handle_tool_errors=...)` but the installed source has it: docs summaries are not enough, check the installed code.

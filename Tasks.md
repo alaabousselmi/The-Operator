@@ -108,12 +108,18 @@ tests/    test_stop.py  test_sandbox.py  test_tools.py  test_checkpoint.py  test
 - [x] **T8.4** Clean-clone test (fresh clone, new venv, `pip install -e .`, `pytest`, oracle eval) and secret scan. `.gitattributes` forces LF and marks PDFs binary.
 - [ ] **T8.5** Before freezing: Contributions filled (user), re-run the clean-clone test, tag the commit.
 
+### Phase 9 — LangGraph highlight and LangSmith (course requirement, added 2026-11-11)
+- [x] **T9.1** README: graph diagram generated from the compiled graph + table of the LangGraph features used and where.
+- [x] **T9.2** `agent/tracing.py`: `traced_run` (one LangSmith trace per run) and `log_scores` (eval scores as feedback); wired into `eval/run_eval.py::run_scenario` and `agent/cli.py`; `.env.example` variables; `tests/conftest.py` forces tracing off; `langsmith==0.14.17` pinned. Checked offline with a local capture server.
+- [ ] **T9.3** (user) Create a LangSmith account and API key, add `LANGSMITH_TRACING=true`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT=the-operator` to `.env` (EU accounts: also `LANGSMITH_ENDPOINT`).
+- [ ] **T9.4** Verify with the real key: `python -m eval.run_eval --only repair_bad_date_format_orders --tag ls_check --key-env GROQ_API_KEY_2`, then check in the UI: one trace, nodes visible, 5 feedback scores. Fix `log_scores` if the feedback call is refused. Add 2-3 screenshots to the README/report and prepare one trace (the decoy injection) for the demo.
+
 ## 4b. Next week (plan agreed 2026-11-11)
 
 Goal: freeze a repo whose numbers match its code, and a team that can explain every line.
 
 - [ ] **N1 — Freeze the code** (day 1). No more changes to `agent/` or `sandbox/` after this, except bug fixes that force a new eval run.
-- [ ] **N2 — Final eval on the frozen code** (day 1-2, needs the 6 keys' daily quota): `python -m eval.run_team --tag v4 --runs 3 --once repair` (~865K tokens, ~11 min). Then replace the v3 numbers in `README.md`, `report.md` (+ `python tools/build_report.py`), `threat_model.md` section 6, `errors.md` recovery table. Check for every injection pass that the planted text was actually read.
+- [ ] **N2 — Final eval on the frozen code, with LangSmith tracing on** (day 1-2, needs the 6 keys' daily quota and T9.3-T9.4 done): `python -m eval.run_team --tag v4 --runs 3 --once repair` (~865K tokens, ~11 min). Then replace the v3 numbers in `README.md`, `report.md` (+ `python tools/build_report.py`), `threat_model.md` section 6, `errors.md` recovery table. Check for every injection pass that the planted text was actually read.
 - [ ] **N3 — Each member reviews their area** (days 1-3, see README Contributions): read every file of the area, run its tests, run `python -m agent.cli` once, and write down anything they cannot explain. Fix or simplify what nobody can explain.
 - [ ] **N4 — Demo rehearsal** (day 3-4): follow `threat_model.md` section 8 twice, with one member playing the instructor and inventing a new injection each time (log, config, data file, extra file in `data/`). No `--auto-approve`. Record what happened; a new successful attack means a fix, then N2 again.
 - [ ] **N5 — Optional, only if N1-N4 are done**: two-jobs-failing scenario; strip terminal control characters in the CLI output (threat model risk 6); paid-model comparison (T5.6); make the poisoned-old-log case force the agent to read the old log.

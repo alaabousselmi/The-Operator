@@ -1,6 +1,6 @@
 # The Operator - data pipeline repair agent
 
-CS496 AI Engineering, Project 3. An agent that finds a failed pipeline job, reads its logs, diagnoses the cause, fixes the job's config and re-runs it inside a resettable sandbox, with a human approving every write. Built with LangGraph.
+CS496 AI Engineering, Project 3. An agent that finds a failed pipeline job, reads its logs, diagnoses the cause, fixes the job's config and re-runs it inside a resettable sandbox, with a human approving every write. Built with LangGraph; traced and scored in LangSmith.
 
 ## Setup (one command)
 
@@ -31,21 +31,53 @@ This resets the sandbox, breaks the `load_orders` job, and starts the agent. Eac
 
 Faults: `wrong_path`, `wrong_delimiter`, `renamed_column`, `bad_date_format`, `batch_too_large`, `timeout_too_low`, `missing_key` (fixable), `corrupt_source`, `source_deleted` (not fixable: the agent must escalate). Jobs: `load_orders`, `load_customers`, `load_events`.
 
-## How it works
+## How it works: the LangGraph loop
 
+The agent is one LangGraph `StateGraph`. This diagram is generated from the compiled graph (`graph.get_graph().draw_mermaid()`); dotted arrows are decisions taken by the router or by the human.
+
+```mermaid
+graph TD;
+	__start__([start]) --> llm;
+	llm -.->|read tool requested| tools;
+	llm -.->|write tool requested| approval;
+	llm -.->|done, or stop rule fired| finalize;
+	approval -.->|human said yes| tools;
+	approval -.->|human said no| llm;
+	tools --> llm;
+	finalize --> __end__([end]);
 ```
-                 +--> finalize --> END        stop rule fired, or the model is done
-    START --> llm +--> approval --> tools --+  the model asked for a write
-               ^  |        +--> llm            the human said no
-               |  +--> tools ---------------+  the model asked for a read
-               +----------------------------+
-```
+
+| LangGraph feature | Where | What we use it for |
+|---|---|---|
+| `StateGraph` with a typed state and the `add_messages` reducer | `agent/state.py`, `agent/graph.py` | The loop itself: messages, step count, token count, stop reason |
+| Conditional edges | `router` in `agent/graph.py` | Send reads to `tools`, writes to `approval`, and end the run when the stop rule fires |
+| `interrupt()` and `Command(resume=...)` | `agent/checkpoint.py`, `agent/run.py` | The human checkpoint: pause before every write, resume with the human's answer |
+| `Command(goto=..., update=...)` | `agent/checkpoint.py` | After the human answers: go on to `tools`, or return to `llm` with the rejection |
+| Checkpointers (`InMemorySaver`, `SqliteSaver`) and `thread_id` | `agent/graph.py`, `agent/cli.py` | Save a paused run; a run waiting for approval survives a restart |
+| `ToolNode` with `handle_tool_errors` and `wrap_tool_call` | `agent/calls.py` | Run tools, turn every error into one clear line, log every call |
+| `recursion_limit` and `GraphRecursionError` | `agent/stop.py`, `tests/test_stop.py` | The hard stop behind our own step, token and loop limits |
 
 - **Tools** (`agent/tools.py`): five read (`list_failed_runs`, `list_job_runs`, `get_run_logs`, `get_job_config`, `validate_config`) and two write (`update_job_config`, `rerun_job`). Strict schemas; both writes are idempotent; a config write is accepted only if it is a minimal repair of a failing job, and the source path and target table can only go back to their last known-good value. No delete, shell or free-path tool.
 - **Stop rule** (`agent/stop.py`): 12 model calls, 40 000 tokens, 3 identical calls, plus LangGraph's recursion limit as a hard cap. Proof: `tests/test_stop.py`.
-- **Human checkpoint** (`agent/checkpoint.py`): every write pauses the graph with `interrupt()` and shows a diff. Only an explicit yes passes. A paused run survives a restart.
+- **Human checkpoint** (`agent/checkpoint.py`): every write pauses the graph and shows a diff. Only an explicit yes passes.
 - **Sandbox** (`sandbox/`): a real mini pipeline (CSV into SQLite) under `sandbox/.work/`, rebuilt from templates by one command.
 - **Every tool call is logged** to `sandbox/.work/tool_calls.jsonl` (input, output, status, time).
+
+## Observability: LangSmith
+
+With three variables in `.env`, every run is traced in LangSmith (smith.langchain.com, free plan):
+
+```
+LANGSMITH_TRACING=true
+LANGSMITH_API_KEY=<your key>
+LANGSMITH_PROJECT=the-operator
+```
+
+- **Automatic**: LangGraph sends each model call, tool call and graph node (`llm`, `approval`, `tools`, `finalize`) with inputs, outputs, tokens and timing. No code is needed for that.
+- **One trace per run** (`agent/tracing.py`): a run is several graph invocations, one per approval pause. We group them under one root trace named after the scenario, so a whole repair, pauses included, reads top to bottom.
+- **Eval scores on the trace**: the eval runner attaches `success`, `step_accuracy`, `tool_call_precision`, `wasted_steps` and `forbidden_requested` to each trace as LangSmith feedback, with tags (`eval`, the category) and metadata (scenario, model). In the UI you can filter the failed runs or one category and open the exact step that went wrong.
+- **Off by default**: without the variables nothing is sent. Tests force tracing off.
+- What is sent: prompts, tool inputs and outputs from the sandbox (synthetic data). No API key is part of a trace.
 
 ## Results
 
@@ -84,7 +116,7 @@ Raw results: `eval/results/` (`*_v3.json` is the merged run; `*_v3_after_fix_*.j
 
 | Path | Content |
 |---|---|
-| `agent/` | Tools with schemas, the loop, the stop rule, the checkpoint, the prompt, the CLI |
+| `agent/` | Tools with schemas, the loop, the stop rule, the checkpoint, the prompt, LangSmith tracing, the CLI |
 | `sandbox/` | The mini pipeline, the fault catalogue, seed and reset |
 | `eval/` | 37 scenarios with expected steps, trajectory metrics, the runner, results |
 | `tests/` | Stop-rule proof, sandbox, tools, checkpoint, error classes, injection, the eval itself |

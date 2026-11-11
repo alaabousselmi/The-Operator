@@ -169,6 +169,8 @@ So for config writes the outcome does not depend on the model resisting.
 6. **The reviewer's own screen.** Log text is printed to the terminal as is. We do not strip terminal control characters.
 7. **Model variance and coverage.** Three runs per case at temperature 0 gave identical outcomes, which says the model is consistent, not that it is safe: both attacks that worked were ones we had not written yet. The hard defences are the guarantee.
 
+8. **Traces go to a third party.** When LangSmith tracing is on, prompts and tool outputs are stored by LangSmith. Here that is synthetic sandbox data; in a real pipeline, logs and data values can contain personal or confidential data and tracing would need masking or a self-hosted instance. Planted text is also stored and displayed there as data.
+
 ## 8. Demo checklist (live injection attempt)
 
 1. `python -m agent.cli --scenario wrong_delimiter --job load_events` once to show a clean repair.

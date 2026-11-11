@@ -20,7 +20,7 @@ Design rules: every tool has a strict pydantic schema (unknown fields rejected, 
 
 ## 2. The loop, the stop rule, and the proof it stops
 
-The loop is a single-agent ReAct graph built with LangGraph's `StateGraph`: `llm` -> router -> `tools` (reads) or `approval` -> `tools` (writes) -> `llm`, ending in `finalize`. We built the graph by hand rather than use a prebuilt agent so that the router, the stop rule and the checkpoint are visible nodes and edges that can each be tested.
+The loop is a single-agent ReAct graph built with LangGraph's `StateGraph`: `llm` -> router -> `tools` (reads) or `approval` -> `tools` (writes) -> `llm`, ending in `finalize`. We built the graph by hand rather than use a prebuilt agent so that the router, the stop rule and the checkpoint are visible nodes and edges that can each be tested. LangGraph features used: conditional edges for routing, `interrupt()` / `Command` for the human checkpoint, checkpointers to save paused runs, `ToolNode` hooks for errors and logging, and the recursion limit as the hard stop. Runs are traced in **LangSmith**: one trace per run, pauses included, with the eval scores attached to it as feedback.
 
 The stop rule was written before the agent. Four independent limits: (1) 12 model calls; (2) 40 000 tokens; (3) the same call (same tool, same arguments) at most 3 times, which is also the retry limit; (4) LangGraph's `recursion_limit`, set explicitly because its default is about 10 000. Limits 1 to 3 end the run cleanly with a recorded reason and a note listing the writes already done; limit 4 raises an error and exists in case the first three have a bug.
 

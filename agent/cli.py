@@ -18,6 +18,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 
 from agent.run import run_agent
 from agent.stop import Limits
+from agent.tracing import log_scores, traced_run
 from sandbox.faults import FAULTS
 from sandbox.paths import SANDBOX_DIR, WORK
 from sandbox.seed import seed
@@ -64,7 +65,10 @@ def main() -> None:
 
     # Paused runs are saved in SQLite, outside .work so a sandbox reset cannot lock it.
     with closing(sqlite3.connect(SANDBOX_DIR / "checkpoints.db", check_same_thread=False)) as connection:
-        state = run_agent(model, approve, WORK, Limits(), SqliteSaver(connection), on_message=show)
+        # With LangSmith configured, the whole run (pauses included) is one trace.
+        with traced_run("cli-run", ["cli"], {"scenario": args.scenario, "job": args.job}) as root:
+            state = run_agent(model, approve, WORK, Limits(), SqliteSaver(connection), on_message=show)
+            log_scores(root, {"stop_reason": state["stop_reason"], "steps": state["steps"]}, {})
     print(f"\nStopped: {state['stop_reason']} | steps: {state['steps']} | tokens: {state['tokens_used']}")
 
 

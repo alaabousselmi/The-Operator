@@ -151,6 +151,17 @@ Format: **Choice** · **Why** · **Rejected** · **Revisit if**.
 - **Cost**: a genuinely new source file or table can no longer be introduced by the agent; a human must do that. That is the intended division of work.
 - **Limit**: the rule trusts history. Tampered content in the right file, or a bad value that already got into a successful run, is not detected (threat model, residual risk 1).
 
+## D11 — Observability: LangSmith tracing with eval scores as feedback
+
+- **Choice**: LangSmith tracing, switched on by environment variables only. On top of the automatic tracing we add (1) one root trace per agent run, opened with `langsmith.trace`, and (2) the eval scores of each scenario run attached to its trace with `create_feedback` (`agent/tracing.py`).
+- **Why LangSmith**: required by the course, and it fits: LangGraph reports every node, model call and tool call to it with no code. Our own `tool_calls.jsonl` shows what the tools did; LangSmith also shows what the model saw and answered at each step, with tokens and latency, which is what is needed to explain a bad step.
+- **Why one root trace per run**: each approval pause ends a `graph.invoke`, so one repair would appear as three unrelated traces. Grouping them makes a run readable from the first read to the final report. Checked offline against a local capture server: one trace id, three graph invocations and all nodes under it.
+- **Why scores as feedback**: the numbers of our eval then sit on the trace they describe. Filtering `success = 0` or the `injection` tag leads straight to the step where an attack worked.
+- **Why our own eval runner stays the source of truth** (instead of LangSmith datasets and experiments): scoring needs the sandbox state before and after the run and the tool-call log, both local; the runner also has to split work over several keys and resume after a quota stop. LangSmith is the place to look at runs, not the place where pass/fail is decided. **Revisit if** we want side-by-side experiment comparison in the UI: the scenarios could be uploaded as a dataset.
+- **Safety choices**: off unless configured; tests force it off (`tests/conftest.py`); a tracing error never fails a run; feedback is logged with `extend_trace_retention=False` to stay on the free base tier (5 000 traces a month; one full eval is 83).
+- **What leaves the machine**: prompts and sandbox tool output (synthetic data), sent to a third-party service. Nothing else in the project is sent anywhere except the model provider.
+- **Not yet verified with a real key**: attaching feedback needs the project id, which our offline check cannot provide; that path is tested only up to the request being built.
+
 ## D9 — Tooling: Python 3.11, setuptools `pyproject.toml`, pinned versions, pytest
 
 - **Choice**: exact version pins (langgraph 1.2.20, langchain 1.4.10, langchain-groq 1.1.3, langgraph-checkpoint-sqlite 3.1.3); setup is `pip install -e .`.
