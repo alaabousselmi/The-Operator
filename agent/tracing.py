@@ -12,14 +12,29 @@ by itself. This module adds two things on top:
   calls (one per approval pause); without this they would show up as separate traces.
 - log_scores: attaches the eval scores of a run to its trace (LangSmith "feedback").
 
-Without the variables, both functions do nothing and nothing leaves the machine.
+Without the variables (or with an empty key), nothing leaves the machine.
 """
 
+import os
 from contextlib import contextmanager
 from functools import lru_cache
 
 import langsmith
 from langsmith.utils import tracing_is_enabled
+
+
+def configure_tracing() -> bool:
+    """Call once at start-up, after .env is loaded. Tracing is on only if it is switched
+    on AND a key is present; otherwise it is forced off, so a half-filled .env sends
+    nothing and produces no errors. Returns True when tracing is on."""
+    wanted = os.environ.get("LANGSMITH_TRACING", "").lower() == "true"
+    if wanted and os.environ.get("LANGSMITH_API_KEY"):
+        print(f"LangSmith tracing: on (project '{os.environ.get('LANGSMITH_PROJECT', 'default')}')")
+        return True
+    os.environ["LANGSMITH_TRACING"] = "false"
+    if wanted:
+        print("LangSmith tracing: off (LANGSMITH_API_KEY is empty in .env)")
+    return False
 
 
 @contextmanager

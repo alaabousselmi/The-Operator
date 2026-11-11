@@ -12,7 +12,7 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 | Next task | T9.3 (user: LangSmith key in `.env`) → T9.4 (verify traces + feedback with the real key) → next-week plan `Tasks.md` 4b (N1 freeze → N2 final eval v4 with tracing → N3 reviews → N4 rehearsal → N6 hand-in) |
 | Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
 | Code written | `agent/{state,stop,tools,calls,checkpoint,prompts,graph,run,cli}.py`, `sandbox/*`, `eval/{fake_model,metrics,run_eval}.py`, `eval/scenarios.yaml` (32) |
-| Tests passing | 167 passed, 2 skipped (`.venv/Scripts/python -m pytest -q`) |
+| Tests passing | 172 passed, 2 skipped (`.venv/Scripts/python -m pytest -q`) |
 
 ## Blocked / needs the user
 
@@ -114,6 +114,7 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - Offline check (LangSmith client pointed at a local server): one trace per scenario run, 3 `LangGraph` invocations and nodes `llm/router/approval/tools/finalize` under it. NOT verified: the `create_feedback` call needs the real project id (`read_project`), so scores-on-trace is untested against the real service. SDK warns that feedback without `session_id` is deprecated; we pass it.
 - Docs note: current LangSmith docs describe an "agent workspace" mode with `LANGSMITH_AGENT_ID` instead of `LANGSMITH_PROJECT`; we use the project mode. If the user's workspace is the agent kind, adjust `.env` per the LangSmith setup page.
 - Free plan: 5 000 base traces/month, 14-day retention. A full eval = 83 traces.
+- 2026-11-11 later: user created a LangSmith account and key. `.env` now has the LangSmith block with an EMPTY `LANGSMITH_API_KEY=` line for the user to fill. `configure_tracing()` (called by `agent.cli` and `eval.run_eval` after `load_dotenv`) forces tracing off while the key is empty and prints the tracing status at start-up.
 
 ## Problems met (feeds postmortem.md)
 - LangSmith was a course requirement we only learned about after the eval was done: the v3 run has no traces. The final run (v4) must be traced.

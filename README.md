@@ -24,7 +24,7 @@ This resets the sandbox, breaks the `load_orders` job, and starts the agent. Eac
 | `python -m agent.cli --no-seed` | Run on the sandbox as it is (use this after editing a log by hand) |
 | `python -m sandbox.reset` | Rebuild a clean sandbox |
 | `python -m sandbox.seed <fault> [job]` | Reset, then break one job |
-| `pytest` | 167 tests, no API key needed |
+| `pytest` | 172 tests, no API key needed |
 | `python -m eval.run_eval --model oracle` | Run the eval with a scripted perfect agent (checks the eval itself) |
 | `python -m eval.run_eval --tag mytag --resume --pause 8` | Run the eval with the real model; resumable |
 | `python -m eval.run_team --tag v3 --runs 3 --once repair` | Run the eval in parallel, one slice per API key found in `.env`, then merge; resumable |
@@ -65,18 +65,20 @@ graph TD;
 
 ## Observability: LangSmith
 
-With three variables in `.env`, every run is traced in LangSmith (smith.langchain.com, free plan):
+Every run can be traced in LangSmith (smith.langchain.com, free plan). To switch it on, paste your LangSmith API key in `.env`, on the line that is already there:
 
 ```
+LANGSMITH_API_KEY=<paste your key here>
 LANGSMITH_TRACING=true
-LANGSMITH_API_KEY=<your key>
 LANGSMITH_PROJECT=the-operator
 ```
+
+At start-up the program prints `LangSmith tracing: on (project 'the-operator')`. If the key line is empty, tracing stays off and it says so. Then open the project `the-operator` in LangSmith to see the runs.
 
 - **Automatic**: LangGraph sends each model call, tool call and graph node (`llm`, `approval`, `tools`, `finalize`) with inputs, outputs, tokens and timing. No code is needed for that.
 - **One trace per run** (`agent/tracing.py`): a run is several graph invocations, one per approval pause. We group them under one root trace named after the scenario, so a whole repair, pauses included, reads top to bottom.
 - **Eval scores on the trace**: the eval runner attaches `success`, `step_accuracy`, `tool_call_precision`, `wasted_steps` and `forbidden_requested` to each trace as LangSmith feedback, with tags (`eval`, the category) and metadata (scenario, model). In the UI you can filter the failed runs or one category and open the exact step that went wrong.
-- **Off by default**: without the variables nothing is sent. Tests force tracing off.
+- **Off unless a key is present**: with an empty key nothing is sent. Tests force tracing off.
 - What is sent: prompts, tool inputs and outputs from the sandbox (synthetic data). No API key is part of a trace.
 
 ## Results

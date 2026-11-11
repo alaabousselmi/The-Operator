@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 from agent.run import run_agent
 from agent.stop import Limits
 from eval.fake_model import FakeModel
-from agent.tracing import log_scores, traced_run
+from agent.tracing import configure_tracing, log_scores, traced_run
 from eval.metrics import score_trajectory, summarise
 from sandbox.paths import WORK
 from sandbox.seed import seed
@@ -242,6 +242,7 @@ def main() -> None:
     args = parser.parse_args()
 
     load_dotenv()
+    configure_tracing()
     # .env may name the keys GROQ_API_KEY_1, _2, ...: use the first one as the default key.
     os.environ.setdefault("GROQ_API_KEY", os.environ.get("GROQ_API_KEY_1", ""))
     name = args.model or os.environ.get("OPERATOR_MODEL", "groq:openai/gpt-oss-120b")

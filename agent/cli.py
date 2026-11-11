@@ -18,7 +18,7 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 
 from agent.run import run_agent
 from agent.stop import Limits
-from agent.tracing import log_scores, traced_run
+from agent.tracing import configure_tracing, log_scores, traced_run
 from sandbox.faults import FAULTS
 from sandbox.paths import SANDBOX_DIR, WORK
 from sandbox.seed import seed
@@ -55,6 +55,7 @@ def main() -> None:
     args = parser.parse_args()
 
     load_dotenv()
+    configure_tracing()
     # .env may name the keys GROQ_API_KEY_1, _2, ...: use the first one as the default key.
     os.environ.setdefault("GROQ_API_KEY", os.environ.get("GROQ_API_KEY_1", ""))
     if not args.no_seed:
