@@ -8,11 +8,9 @@ import hashlib
 import json
 
 import pytest
-from langchain.messages import HumanMessage
 
-from agent.graph import build_graph, run_config
+from agent.run import run_agent
 from agent.stop import Limits
-from agent.tools import make_tools
 from eval.fake_model import FakeModel
 from sandbox.seed import seed
 
@@ -27,12 +25,11 @@ def work(tmp_path):
 
 
 def call_tools(work, *calls):
-    """Run the given (tool, args) calls in order; return the text of each result."""
+    """Run the given (tool, args) calls in order, approving every write; return each result text."""
     model = FakeModel(script=[[call] for call in calls])
     limits = Limits(max_steps=len(calls) + 1)
-    graph = build_graph(model, make_tools(work), limits, log_path=work / "tool_calls.jsonl")
-    result = graph.invoke({"messages": [HumanMessage("go")]}, run_config(limits))
-    return [m.content for m in result["messages"] if m.type == "tool"]
+    state = run_agent(model, lambda request: {"approved": True}, work, limits)
+    return [m.content for m in state["messages"] if m.type == "tool"]
 
 
 def files_state(work) -> dict:
