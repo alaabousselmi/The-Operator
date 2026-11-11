@@ -197,6 +197,8 @@ def main() -> None:
     args = parser.parse_args()
 
     load_dotenv()
+    # .env may name the keys GROQ_API_KEY_1, _2, ...: use the first one as the default key.
+    os.environ.setdefault("GROQ_API_KEY", os.environ.get("GROQ_API_KEY_1", ""))
     name = args.model or os.environ.get("OPERATOR_MODEL", "groq:openai/gpt-oss-120b")
     RESULTS.mkdir(exist_ok=True)
     label = name.replace(":", "_").replace("/", "_")

@@ -1,6 +1,6 @@
 """Run the eval in parallel, one slice per API key:  python -m eval.run_team --tag v3 --runs 3
 
-Looks for GROQ_API_KEY, GROQ_API_KEY_2, GROQ_API_KEY_3, ... in the environment (.env),
+Looks for GROQ_API_KEY and GROQ_API_KEY_1 ... GROQ_API_KEY_9 in the environment (.env),
 starts one `eval.run_eval --shard i/n` process per key, waits, then merges the slices.
 Each slice has its own sandbox folder and its own results file, so a slice stopped by
 its daily quota is resumed by running the same command again.
@@ -27,8 +27,13 @@ def main() -> None:
 
     load_dotenv()
     model = os.environ.get("OPERATOR_MODEL", "groq:openai/gpt-oss-120b")
-    key_names = ["GROQ_API_KEY"] + [f"GROQ_API_KEY_{n}" for n in range(2, 10)]
-    key_names = [name for name in key_names if os.environ.get(name)]
+    candidates = ["GROQ_API_KEY"] + [f"GROQ_API_KEY_{n}" for n in range(1, 10)]
+    key_names, seen = [], set()
+    for name in candidates:  # skip empty names, and the same key written under two names
+        value = os.environ.get(name)
+        if value and value not in seen:
+            key_names.append(name)
+            seen.add(value)
     count = len(key_names)
     print(f"{count} key(s) found: {count} slice(s), {args.runs} run(s) per scenario")
 

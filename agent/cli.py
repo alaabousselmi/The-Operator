@@ -54,6 +54,8 @@ def main() -> None:
     args = parser.parse_args()
 
     load_dotenv()
+    # .env may name the keys GROQ_API_KEY_1, _2, ...: use the first one as the default key.
+    os.environ.setdefault("GROQ_API_KEY", os.environ.get("GROQ_API_KEY_1", ""))
     if not args.no_seed:
         failed = seed(args.scenario, args.job)
         print(f"Sandbox seeded: {failed}")
