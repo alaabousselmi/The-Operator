@@ -150,7 +150,7 @@ def run_scenario(scenario: dict, model, work: Path = WORK, limits: Limits = Limi
         "input_tokens": sum(u.get("input_tokens", 0) for u in usage),
         "output_tokens": sum(u.get("output_tokens", 0) for u in usage),
         "seconds": round(seconds, 2),
-        "trajectory": [f"{entry['tool']}:{entry['status']}" for entry in log],
+        "trajectory": [{"tool": e["tool"], "input": e["input"], "status": e["status"]} for e in log],
         "final_answer": final_text[:500],
     })
     return record

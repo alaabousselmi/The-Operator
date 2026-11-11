@@ -7,16 +7,16 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 | Field | Value |
 |---|---|
 | Last updated | 2026-11-11 |
-| Current phase | 4 — Loop + human checkpoint (not started) |
-| Last finished task | T3.5 (Phases 1-3 complete) |
-| Next task | T4.1 (approval node in graph) → T4.2 → T4.3 (prompt) → T4.4 (CLI) → T4.5, T4.6 |
+| Current phase | 6 — Error taxonomy (not started) |
+| Last finished task | T5.5 (Phases 1-5 complete, except T5.6 paid comparison and T5.7 harder eval) |
+| Next task | T6.1 (`errors.md`) + T6.2 (`tests/test_errors.py`) → Phase 7 (`threat_model.md`) → T5.7 → Phase 8 |
 | Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
-| Code written | Phase 1: `agent/{state,stop,graph}.py`, `eval/fake_model.py`. Phase 2: `sandbox/*`. Phase 3: `agent/tools.py` (7 tools), `agent/calls.py` (tool node: errors + call log) |
-| Tests passing | 60/60 (`.venv/Scripts/python -m pytest -q`) |
+| Code written | `agent/{state,stop,tools,calls,checkpoint,prompts,graph,run,cli}.py`, `sandbox/*`, `eval/{fake_model,metrics,run_eval}.py`, `eval/scenarios.yaml` (32) |
+| Tests passing | 110/110 (`.venv/Scripts/python -m pytest -q`) |
 
 ## Blocked / needs the user
 
-1. **T0.5 (user)**: Groq API key in `.env` + real free-tier limits from the Groq console. Not blocking until T5.5.
+1. Nothing blocking. Groq key is in `.env`. Paid-model comparison (T5.6) needs the user to pick a paid provider and add its key.
 
 ## Team (README Contributions)
 
@@ -40,6 +40,8 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - 2026-11-11 — Phase 1 done: stop rule + minimal graph + fake model; 8 tests pass.
 - 2026-11-11 — Phase 2 done: sandbox runner, 9 faults, seed/reset; 40 tests pass.
 - 2026-11-11 — Phase 3 done: 7 tools, tool node with error formatting and call log; 60 tests pass.
+- 2026-11-11 — Phase 4 done: approval node, prompt, loop rule, runner, CLI; first real Groq repair worked (6 steps).
+- 2026-11-11 — Phase 5 done: 32 scenarios, metrics, runner; 110 tests pass; Groq eval run.
 
 ## Sandbox facts for Phase 3
 
@@ -57,6 +59,15 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - Unknown tool names are answered by `ToolNode` itself ("... is not a valid tool, try one of [...]").
 - Tool results are compact JSON or plain text; errors start with `ERROR E_`. Wrapping results in `<tool_output>` tags is still to do (T4.3).
 
+## Eval results (Groq `openai/gpt-oss-120b`, 2026-11-11, one run per scenario, temperature 0)
+
+- Task success 32/32. Step accuracy 1.00, tool-call precision 0.99, wasted steps 0.34 per task (11 extra calls in total, mostly optional reads; one bad-argument call to `list_job_runs`).
+- Recovery after a single tool failure 5/5. Injection: 6/6 resisted (no forbidden call requested). Stop rule never exceeded.
+- 5.97 steps and ~10 250 tokens per task (309 347 input + 18 654 output in total). Cost $0.0018 per task at list price; $5.76 for this workload ×100.
+- Time per task p50 3.7 s, p95 18.9 s (the slow ones include Groq rate-limit waits).
+- Real account limits seen in response headers: 1 000 requests/day, 8 000 tokens/minute. The 328K-token run completed in one go, so the 200K tokens/day figure from the docs did not stop it.
+- Caveats: one run per scenario; we wrote the scenarios ourselves; a perfect score suggests the suite is too easy → T5.7. In `inject_log_fake_closing_tag` the agent made one extra `validate_config` call whose arguments were not recorded (the runner now stores full call inputs).
+
 ## Problems met (feeds postmortem.md)
 
 - Planned to use LangGraph `RemainingSteps` for the graceful stop; on reading its source it counts super-steps and depends on `recursion_limit`, so we switched to our own model-call counter (D6).
@@ -65,4 +76,11 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - Sandbox snapshot test first counted SQLite's automatic index as a table; filter `sqlite_master` on `type = 'table'`.
 - First tool design put error handling in a wrapper inside each tool; that cannot see schema-validation failures (they happen before the tool body). Moved to `ToolNode` hooks (D8a).
 - Planned a model-supplied `idempotency_key` for `rerun_job`; realised the model could change it each call, so the key is now derived from the config hash (D8a).
+- `Command(resume=None)` / `Command(resume={})` crash inside LangGraph 1.2.20 (UnboundLocalError); the approver must return a non-empty value.
+- Adding the loop rule broke the stop-rule tests (the looping fake model was now stopped as "loop" before `max_steps`); tests had to disable the rule they were not testing.
+- A `ToolNode` cannot be invoked outside a graph, so tools are tested through the real graph.
+- Eval scoring first dropped every injected-failure call, which made the "tool always down" scenario lose its expected step; now a failed call counts once if it was retried.
+- First scenario file used YAML anchors (unreadable); regenerated without aliases.
+- The eval record did not store call arguments, so one odd extra call in an injection run could not be explained afterwards; fixed.
+- Eval scored 100% on the first real run: good news for the agent, but a sign the scenarios are too easy and that one run per scenario hides variance.
 
