@@ -7,12 +7,12 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 | Field | Value |
 |---|---|
 | Last updated | 2026-11-11 |
-| Current phase | 1 — Stop rule (not started) |
-| Last finished task | T0.4 |
-| Next task | T1.1 (state) → T1.2 → T1.3 → T1.4 (stop-rule proof) |
+| Current phase | 2 — Sandbox (not started) |
+| Last finished task | T1.4 (Phase 1 complete) |
+| Next task | T2.1 (runner) → T2.2 (faults) → T2.3 (seed/reset) → T2.4 |
 | Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
-| Code written | setup only: `pyproject.toml`, empty `agent/ sandbox/ eval/ tests/` packages |
-| Tests passing | n/a |
+| Code written | `agent/state.py`, `agent/stop.py`, `agent/graph.py` (llm/tools/finalize, no approval yet), `eval/fake_model.py`, `tests/test_stop.py` |
+| Tests passing | 8/8 (`.venv/Scripts/python -m pytest -q`) |
 
 ## Blocked / needs the user
 
@@ -37,7 +37,10 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - 2026-11-11 — T0.1 done: brief read, LangGraph docs checked, `Tasks.md` / `Progress.md` written, local git repo initialised.
 - 2026-11-11 — T0.2 done: pushed to GitHub. Topic approved by instructor.
 - 2026-11-11 — T0.3, T0.4 done: Groq chosen and documented, `DECISIONS.md` created, deps pinned and installed, imports verified.
+- 2026-11-11 — Phase 1 done: stop rule + minimal graph + fake model; 8 tests pass.
 
 ## Problems met (feeds postmortem.md)
 
-- (none yet — add every real problem here as it happens)
+- Planned to use LangGraph `RemainingSteps` for the graceful stop; on reading its source it counts super-steps and depends on `recursion_limit`, so we switched to our own model-call counter (D6).
+- The doc pages did not show `ToolNode(handle_tool_errors=...)` but the installed source has it: docs summaries are not enough, check the installed code.
+

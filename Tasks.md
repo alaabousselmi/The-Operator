@@ -29,9 +29,9 @@ An agent that **finds a failed pipeline job, reads its logs, diagnoses the cause
 | Human checkpoint | `from langgraph.types import interrupt, Command`; payload returned in `result["__interrupt__"]`; resume with `graph.invoke(Command(resume=...), config)` |
 | Persistence | needs checkpointer + `{"configurable": {"thread_id": ...}}`; `from langgraph.checkpoint.memory import InMemorySaver`; SQLite: `pip install langgraph-checkpoint-sqlite`, `from langgraph.checkpoint.sqlite import SqliteSaver` |
 | Hard stop | top-level config key `recursion_limit` (default ~10 000, so we MUST set it); raises `from langgraph.errors import GraphRecursionError` |
-| Graceful stop | `from langgraph.managed.is_last_step import RemainingSteps`; state field `remaining_steps: RemainingSteps` |
+| Graceful stop | own `steps` counter in state (DECISIONS D6); `RemainingSteps` exists but is not used |
 
-Gotchas: on resume the interrupted node **re-runs from its start** → no side effects before `interrupt()`, never wrap `interrupt()` in bare try/except. `handle_tool_errors` on `ToolNode` was NOT confirmed in the docs → we catch errors inside our own tool wrapper instead (T3).
+Gotchas: on resume the interrupted node **re-runs from its start** → no side effects before `interrupt()`, never wrap `interrupt()` in bare try/except. `ToolNode(handle_tool_errors=...)` exists, but we catch errors in our own tool wrapper so logging and formatting live in one place (T3).
 
 Docs: https://docs.langchain.com/oss/python/langgraph/overview (pages: interrupts, persistence, graph-api, errors/GRAPH_RECURSION_LIMIT).
 
@@ -56,10 +56,10 @@ tests/    test_stop.py  test_tools.py  test_idempotency.py  test_checkpoint.py  
 - [ ] **T0.5** (user) Create a Groq API key, put it in `.env`, and note the real free-tier limits from the Groq console Limits page in DECISIONS.md D2. Needed before T5.5 only.
 
 ### Phase 1 — Stop rule first (brief: "Write the stopping condition first")
-- [ ] **T1.1** `agent/state.py`: `AgentState` = messages (`add_messages`), `remaining_steps: RemainingSteps`, `tokens_used: int`, `stop_reason: str | None`.
-- [ ] **T1.2** `agent/stop.py`: three limits — `MAX_STEPS` (graceful, via `remaining_steps` → route to `finalize` node), `MAX_TOKENS` budget (checked in router), and `recursion_limit` as the hard cap. `finalize` writes a `stop_reason` and a summary of what was/was not done.
-- [ ] **T1.3** `eval/fake_model.py`: scripted chat model (replays a list of AIMessages; one mode calls a tool forever). Used for all tests that must run without an API key.
-- [ ] **T1.4** `tests/test_stop.py` = **the proof**: with the "forever" fake model the run ends with `stop_reason="max_steps"` in ≤ N steps; with a token-hungry fake it ends with `"budget"`; with the graceful rule disabled, `GraphRecursionError` is raised. Done when all three pass.
+- [x] **T1.1** `agent/state.py`: `AgentState` = messages (`add_messages`), `steps` (model calls), `tokens_used`, `stop_reason`.
+- [x] **T1.2** `agent/stop.py`: `Limits(max_steps, max_tokens)`, `stop_reason(state, limits)`, `hard_recursion_limit`. `agent/graph.py`: `build_graph(model, tools, limits, checkpointer)` with nodes `llm`, `tools`, `finalize` and `run_config(limits, thread_id)`.
+- [x] **T1.3** `eval/fake_model.py`: `FakeModel(script=[[(tool, args)]], loop_forever, tokens_per_call)`.
+- [x] **T1.4** `tests/test_stop.py` = **the proof** (8 tests): looping model stopped at exactly `max_steps` calls; stopped by token budget; `GraphRecursionError` when graceful rules are disabled.
 
 ### Phase 2 — Sandbox
 - [ ] **T2.1** `sandbox/runner.py`: `run_job(job_id)` reads `jobs/<id>.json` (source path, delimiter, column mapping, date format, batch size, timeout, target table), loads CSV → SQLite, appends a run row (`runs` table: run_id, job_id, status, config_hash, started, ended) and writes `logs/<run_id>.log`.

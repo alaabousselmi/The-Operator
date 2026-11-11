@@ -52,7 +52,8 @@ Format: **Choice** · **Why** · **Rejected** · **Revisit if**.
 
 ## D6 — Stop rule: step limit + token budget + recursion limit
 
-- **Choice**: graceful stop when `remaining_steps` is low or the token budget is spent (route to `finalize`, record `stop_reason`); LangGraph `recursion_limit` set explicitly as the hard backstop.
+- **Choice**: graceful stop when our own `steps` counter (one step = one model call) reaches `max_steps` or the token budget is spent (route to `finalize`, record `stop_reason`); LangGraph `recursion_limit` set explicitly as the hard backstop (`max_steps * 3 + 5`, since one step uses at most 3 nodes). Defaults: 12 steps, 40 000 tokens.
+- **Why our own counter and not LangGraph's `RemainingSteps`**: `RemainingSteps` counts graph super-steps (every node, including `tools` and `approval`) and is derived from `recursion_limit`, which would tie the graceful rule to the hard one. Counting model calls in state is one line, is the same "steps per task" number the eval reports, and keeps the two limits independent so the hard one still works if the graceful one has a bug. Proof: `tests/test_stop.py`.
 - **Why**: the default `recursion_limit` is about 10 000 (verified), which is no protection, so we set it. A graceful stop gives a readable summary instead of an exception; the hard limit guarantees termination even if our router has a bug. The budget also protects the Groq quota (D2).
 - **Rejected**: only `recursion_limit` — ends in an exception with no summary; only a model-decided "done" — a model cannot be trusted to stop.
 - **Revisit if**: eval shows legitimate tasks hitting the limit.
@@ -67,7 +68,7 @@ Format: **Choice** · **Why** · **Rejected** · **Revisit if**.
 ## D8 — Tool design: pydantic schemas, own error wrapper, allow-listed writes
 
 - **Choice**: every tool has a pydantic `args_schema` with unknown fields forbidden; one shared wrapper turns any exception into a short actionable message and logs input/output/time; `update_job_config` accepts only allow-listed keys; no delete, shell or free-path tool. Eval requests are throttled with `InMemoryRateLimiter` from `langchain_core` (import verified).
-- **Why**: strict schemas stop bad arguments before they reach the sandbox. Our own wrapper is used because a `handle_tool_errors` option on `ToolNode` was not found in the current docs, and we want one place that both formats errors and writes the call log. The narrow write surface is the main injection defence: an attack can only ask for what the tools can do.
+- **Why**: strict schemas stop bad arguments before they reach the sandbox. `ToolNode` does have a `handle_tool_errors` option (seen in the installed langgraph-prebuilt 1.1.1 source, though not on the doc pages we read); we still use our own wrapper because we want one place that both formats errors our way and writes the call log. The narrow write surface is the main injection defence: an attack can only ask for what the tools can do.
 - **Rejected**: one generic "edit file" tool — unbounded damage; returning stack traces — the model cannot act on them and they leak paths.
 - **Revisit if**: the throttle proves unnecessary on the real account limits.
 
