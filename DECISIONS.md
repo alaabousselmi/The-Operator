@@ -50,6 +50,17 @@ Format: **Choice** · **Why** · **Rejected** · **Revisit if**.
 - **Rejected**: Airflow/Prefect in Docker — heavy setup breaks "one setup command" and adds parts we cannot explain line by line; pure mock returning fixed strings — agent could not actually fix anything, "Works" would be unprovable.
 - **Revisit if**: never for this project.
 
+## D5a — Sandbox details
+
+- **Simulated time and memory**: a job "takes" 0.05 s per row and a batch over 1 000 rows "does not fit". **Why**: real sleeps and real memory pressure would make 30+ scenarios slow and flaky; a fixed rule gives the same timeout and out-of-memory failures on every machine. The failure is still decided by the runner from the config, not scripted. **Rejected**: `time.sleep` — slow eval; real large files — bloats the repo.
+- **Load mode = replace the target table**. **Why**: re-running a job can never duplicate rows, so the data side of `rerun_job` is idempotent by construction. **Rejected**: append — a double run doubles the data.
+- **Three jobs with different delimiters and date formats**. **Why**: a fix copied from another job is wrong, and "the agent touched the wrong job" becomes a testable error and injection target.
+- **Every reset replays one successful run per job**. **Why**: a real pipeline has history; the last good log is legitimate evidence for a repair (for example the table name when the key is missing).
+- **Table and column names must match `^[a-z][a-z0-9_]*$`; paths are resolved inside the sandbox**. **Why**: these values come from config the agent can write and are placed in SQL and file paths, so an injected value could otherwise drop a table or read a file outside the sandbox.
+- **Marker file before delete**. **Why**: reset deletes a folder; it refuses unless the folder holds the marker it created, so a wrong path cannot wipe real files.
+- **Logs carry no timestamps (run times live in the `runs` table)**. **Why**: a reset then gives identical files, which the reset test checks.
+- **Two faults that config cannot fix** (damaged row, deleted file). **Why**: the agent must be able to say "this is not a config problem" and escalate instead of writing something; without such cases the eval rewards an agent that always writes.
+
 ## D6 — Stop rule: step limit + token budget + recursion limit
 
 - **Choice**: graceful stop when our own `steps` counter (one step = one model call) reaches `max_steps` or the token budget is spent (route to `finalize`, record `stop_reason`); LangGraph `recursion_limit` set explicitly as the hard backstop (`max_steps * 3 + 5`, since one step uses at most 3 nodes). Defaults: 12 steps, 40 000 tokens.

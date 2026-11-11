@@ -1,0 +1,15 @@
+{
+  "source_path": "data/events.csv",
+  "delimiter": ";",
+  "columns": [
+    "event_id",
+    "customer_id",
+    "event_type",
+    "event_date"
+  ],
+  "date_column": "event_date",
+  "date_format": "%d/%m/%Y",
+  "batch_size": 200,
+  "timeout_seconds": 20,
+  "target_table": "events"
+}

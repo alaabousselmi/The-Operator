@@ -1,0 +1,15 @@
+{
+  "source_path": "data/customers.csv",
+  "delimiter": ",",
+  "columns": [
+    "customer_id",
+    "name",
+    "country",
+    "signup_date"
+  ],
+  "date_column": "signup_date",
+  "date_format": "%Y-%m-%d",
+  "batch_size": 50,
+  "timeout_seconds": 60,
+  "target_table": "customers"
+}

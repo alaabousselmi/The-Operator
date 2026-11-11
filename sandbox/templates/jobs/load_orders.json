@@ -1,0 +1,15 @@
+{
+  "source_path": "data/orders.csv",
+  "delimiter": ",",
+  "columns": [
+    "order_id",
+    "customer_id",
+    "amount",
+    "order_date"
+  ],
+  "date_column": "order_date",
+  "date_format": "%Y-%m-%d",
+  "batch_size": 100,
+  "timeout_seconds": 30,
+  "target_table": "orders"
+}

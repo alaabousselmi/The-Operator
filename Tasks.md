@@ -41,7 +41,7 @@ Docs: https://docs.langchain.com/oss/python/langgraph/overview (pages: interrupt
 README.md  errors.md  threat_model.md  postmortem.md  report.pdf
 Tasks.md  Progress.md  DECISIONS.md  pyproject.toml  .env.example  .gitignore
 agent/    state.py  tools.py  graph.py  stop.py  checkpoint.py  logging.py  prompts.py  cli.py
-sandbox/  runner.py  seed.py  reset.py  faults.py  templates/   (runtime data in sandbox/.work/, git-ignored)
+sandbox/  paths.py  runner.py  seed.py  reset.py  faults.py  make_templates.py  templates/   (runtime data in sandbox/.work/, git-ignored)
 eval/     scenarios/*.yaml  run_eval.py  metrics.py  fake_model.py  results/
 tests/    test_stop.py  test_tools.py  test_idempotency.py  test_checkpoint.py  test_errors.py
 ```
@@ -62,10 +62,10 @@ tests/    test_stop.py  test_tools.py  test_idempotency.py  test_checkpoint.py  
 - [x] **T1.4** `tests/test_stop.py` = **the proof** (8 tests): looping model stopped at exactly `max_steps` calls; stopped by token budget; `GraphRecursionError` when graceful rules are disabled.
 
 ### Phase 2 — Sandbox
-- [ ] **T2.1** `sandbox/runner.py`: `run_job(job_id)` reads `jobs/<id>.json` (source path, delimiter, column mapping, date format, batch size, timeout, target table), loads CSV → SQLite, appends a run row (`runs` table: run_id, job_id, status, config_hash, started, ended) and writes `logs/<run_id>.log`.
-- [ ] **T2.2** `sandbox/faults.py`: fault catalogue, each produced by really breaking config or data: wrong path, wrong delimiter, renamed column, bad date format, batch size too large (simulated OOM), timeout too low, missing required key, non-config fault (corrupt source file → agent must NOT "fix" config, must escalate).
-- [ ] **T2.3** `sandbox/seed.py` + `sandbox/reset.py`: build `sandbox/.work/` from `templates/` for a named scenario; `python -m sandbox.reset` restores a clean state. All tool paths are resolved inside `.work/` and rejected otherwise (no path escape).
-- [ ] **T2.4** Tests: seed → run → fail → reset gives byte-identical state.
+- [x] **T2.1** `sandbox/runner.py`: `run_job(job_id, work)` loads CSV → SQLite (replace mode), records a row in `runs` (run_id, job_id, status, error_code, rows_loaded, config_hash, times) and writes `logs/<run_id>.log`. Helpers: `load_config`, `config_hash`, `check_config`, `connect`. Errors are `JobError(code, message)`.
+- [x] **T2.2** `sandbox/faults.py`: `FAULTS[name] = (function, error_code, fixable)`. Fixable: `wrong_path`, `wrong_delimiter`, `renamed_column`, `bad_date_format`, `batch_too_large`, `timeout_too_low`, `missing_key`. Not fixable (escalate): `corrupt_source`, `source_deleted`.
+- [x] **T2.3** `sandbox/reset.py` (`python -m sandbox.reset`) and `sandbox/seed.py` (`python -m sandbox.seed <fault> [job_id]`, returns the failed run). Jobs: `load_orders`, `load_customers`, `load_events` (templates from `sandbox/make_templates.py`). Path jail: `sandbox/paths.py::resolve_inside`.
+- [x] **T2.4** `tests/test_sandbox.py` (32 tests): every fault fails every job with its code; reset restores identical state; rerun does not duplicate rows; reset refuses non-sandbox folders; paths cannot escape.
 
 ### Phase 3 — Tools (`agent/tools.py`)
 Each tool: clear verb_noun name, pydantic `args_schema` with `extra="forbid"`, enums/regex for ids, returns short JSON text. A shared wrapper catches every exception and returns `ERROR <code>: <what happened>. <what to try>` (no stack trace) and logs `{ts, tool, input, output, duration_ms}` to `sandbox/.work/tool_calls.jsonl`.
