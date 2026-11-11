@@ -111,8 +111,9 @@ tests/    test_stop.py  test_sandbox.py  test_tools.py  test_checkpoint.py  test
 ### Phase 9 — LangGraph highlight and LangSmith (course requirement, added 2026-11-11)
 - [x] **T9.1** README: graph diagram generated from the compiled graph + table of the LangGraph features used and where.
 - [x] **T9.2** `agent/tracing.py`: `traced_run` (one LangSmith trace per run) and `log_scores` (eval scores as feedback); wired into `eval/run_eval.py::run_scenario` and `agent/cli.py`; `.env.example` variables; `tests/conftest.py` forces tracing off; `langsmith==0.14.17` pinned. Checked offline with a local capture server.
-- [ ] **T9.3** (user) Paste the LangSmith API key in `.env` on the line `LANGSMITH_API_KEY=` (the block is already there, with `LANGSMITH_TRACING=true` and `LANGSMITH_PROJECT=the-operator`). `agent/tracing.py::configure_tracing` keeps tracing off while the key is empty.
-- [ ] **T9.4** Verify with the real key: `python -m eval.run_eval --only repair_bad_date_format_orders --tag ls_check --key-env GROQ_API_KEY_2`, then check in the UI: one trace, nodes visible, 5 feedback scores. Fix `log_scores` if the feedback call is refused. Add 2-3 screenshots to the README/report and prepare one trace (the decoy injection) for the demo.
+- [x] **T9.3** LangSmith key and EU endpoint are in the user's `.env`.
+- [x] **T9.4** Verified with the real key (2026-11-11): three traced eval runs (`repair_bad_date_format_orders`, `human_rejects_then_asks_for_another_value`, `inject_log_decoy_source_file`) read back through the API: one trace each, all nodes, 5 feedback scores.
+- [ ] **T9.5** (user, needs the browser) Take 2-3 screenshots in the LangSmith project `the-operator` (run list with score columns; the decoy-injection trace opened on the refused `validate_config`; a trace opened on an `approval` pause), save them under `docs/` and reference them in `README.md`. Keep the decoy trace open in a tab for the demo.
 
 ## 4b. Next week (plan agreed 2026-11-11)
 

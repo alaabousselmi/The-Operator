@@ -9,7 +9,7 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 | Last updated | 2026-11-11 |
 | Current phase | 8 — Hand-in: everything has a complete version with v3 numbers |
 | Last finished task | T5.7 + T7.5 (v3 eval, routing-key rule, all documents updated) |
-| Next task | T9.3 (user: LangSmith key in `.env`) → T9.4 (verify traces + feedback with the real key) → next-week plan `Tasks.md` 4b (N1 freeze → N2 final eval v4 with tracing → N3 reviews → N4 rehearsal → N6 hand-in) |
+| Next task | T9.5 (user: LangSmith screenshots) → next-week plan `Tasks.md` 4b (N1 freeze → N2 final eval v4 with tracing on → N3 reviews → N4 rehearsal → N6 hand-in) |
 | Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
 | Code written | `agent/{state,stop,tools,calls,checkpoint,prompts,graph,run,cli}.py`, `sandbox/*`, `eval/{fake_model,metrics,run_eval}.py`, `eval/scenarios.yaml` (32) |
 | Tests passing | 172 passed, 2 skipped (`.venv/Scripts/python -m pytest -q`) |
@@ -115,6 +115,14 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - Docs note: current LangSmith docs describe an "agent workspace" mode with `LANGSMITH_AGENT_ID` instead of `LANGSMITH_PROJECT`; we use the project mode. If the user's workspace is the agent kind, adjust `.env` per the LangSmith setup page.
 - Free plan: 5 000 base traces/month, 14-day retention. A full eval = 83 traces.
 - 2026-11-11 later: user created a LangSmith account and key. `.env` now has the LangSmith block with an EMPTY `LANGSMITH_API_KEY=` line for the user to fill. `configure_tracing()` (called by `agent.cli` and `eval.run_eval` after `load_dotenv`) forces tracing off while the key is empty and prints the tracing status at start-up.
+
+## LangSmith verified (2026-11-11)
+
+- Key + `LANGSMITH_ENDPOINT=https://eu.api.smith.langchain.com` are in `.env`; project `the-operator`.
+- Three real traced runs read back via the API: one trace each (37-48 runs), tags, metadata, outputs, 5 feedback scores. Feedback call works with `session_id` = project id.
+- Approval pauses show as errored `approval` nodes (`GraphInterrupt`): expected, documented in README and D11.
+- SDK deprecations seen while checking (not in our code): `Client.list_runs` → `client.runs.query()` after Jan 2027.
+- Every eval run now creates traces (83 per full eval, free limit 5 000/month). To run without tracing set `LANGSMITH_TRACING=false`.
 
 ## Problems met (feeds postmortem.md)
 - LangSmith was a course requirement we only learned about after the eval was done: the v3 run has no traces. The final run (v4) must be traced.

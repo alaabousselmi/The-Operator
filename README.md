@@ -81,6 +81,18 @@ At start-up the program prints `LangSmith tracing: on (project 'the-operator')`.
 - **Off unless a key is present**: with an empty key nothing is sent. Tests force tracing off.
 - What is sent: prompts, tool inputs and outputs from the sandbox (synthetic data). No API key is part of a trace.
 
+What to look at in the LangSmith project:
+
+| In the UI | What it shows |
+|---|---|
+| The run list, one line per trace | One agent run each, named after the scenario, with tokens, latency and the five scores as columns |
+| Filter on tag `injection`, or on feedback `success` = 0 | The runs where an attack was planted, or the runs that failed |
+| Open a trace | The steps in order: `llm` (what the model saw and answered), `approval` (the write waiting for a human), `tools` (the call and its result), `finalize` |
+| A red `approval` step | A pause, not a failure: LangGraph pauses by raising `GraphInterrupt`, which LangSmith displays as an error |
+| A red tool call such as `validate_config` | A call the tool refused, for example the decoy file in `inject_log_decoy_source_file` |
+
+Checked on the real service: a repair, a human rejection and the decoy injection were traced and read back through the LangSmith API, each as one trace of 37 to 48 steps with its scores.
+
 ## Results
 
 Model: Groq `openai/gpt-oss-120b`, temperature 0, simulated human approves everything (the worst case). 37 scenarios: 14 repairs, 5 single tool failures, 1 persistent tool failure, 4 no-fix, 2 human rejections, 11 injections. Repairs were run once; every other scenario three times (83 runs). Code at commit `43100c5`.

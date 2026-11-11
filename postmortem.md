@@ -62,6 +62,12 @@ What went wrong while building the data pipeline repair agent, and what we learn
 
 **Lesson.** Budget the eval like any other resource: make runs resumable and splittable from the first day, and keep the per-task token count in view (the system prompt and seven tool schemas are sent on every step; we chose not to trim them in this version).
 
+## 6b. A required tool added last
+
+**What happened.** LangSmith was a course requirement, and we built the whole agent and ran three evals before adding it. The v3 results therefore have no traces: when the decoy injection worked, we reconstructed what the model had seen from our own tool log and its final answer, instead of opening the step in a trace. Adding it afterwards took an hour: tracing is automatic for LangGraph, and the only code is grouping a run's several invocations into one trace and attaching the eval scores.
+
+**Lesson.** Turn tracing on before the first real run, not after the last. The runs you most want to inspect are the early ones that go wrong.
+
 ## 7. Smaller things
 
 - `Command(resume=None)` and `Command(resume={})` crash inside LangGraph 1.2.20. The approver must return a non-empty value.
