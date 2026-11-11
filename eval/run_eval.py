@@ -181,6 +181,32 @@ def save(json_path: Path, records: list, name: str) -> dict:
     return summary
 
 
+def plan(runs: int, once: set, wanted: set, done: set) -> list:
+    """Every (scenario, run number) still to do. Categories in `once` are run a single time."""
+    return [
+        (scenario, run)
+        for run in range(1, runs + 1)
+        for scenario in load_scenarios()
+        if (run == 1 or scenario["category"] not in once)
+        and (not wanted or scenario["id"] in wanted)
+        and (scenario["id"], run) not in done
+    ]
+
+
+def slice_of(todo: list, shard: int, shards: int) -> list:
+    """Cut the work into `shards` slices of similar size and return slice number `shard`.
+
+    Size is estimated by the number of expected steps. The biggest items are placed
+    first, each on the lightest slice so far. Every process computes the same split.
+    """
+    slices, loads = [[] for _ in range(shards)], [0] * shards
+    for item in sorted(todo, key=lambda item: -len(item[0]["expected_steps"])):
+        lightest = loads.index(min(loads))
+        slices[lightest].append(item)
+        loads[lightest] += len(item[0]["expected_steps"]) + 1
+    return slices[shard - 1]
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run the trajectory eval")
     parser.add_argument("--model", default=None, help="'oracle', or a model id (default: OPERATOR_MODEL)")
@@ -189,8 +215,9 @@ def main() -> None:
     parser.add_argument("--pause", type=float, default=0, help="seconds to wait between scenarios")
     parser.add_argument("--tag", default="", help="name the results file <model>_<tag> instead of <model>_<date>")
     parser.add_argument("--runs", type=int, default=1, help="how many times to run each scenario")
-    parser.add_argument("--shard", default="1/1", help="i/n: run only the i-th of n equal slices of the suite, "
-                        "so that n teammates can each run one slice with their own key")
+    parser.add_argument("--once", default="", help="comma-separated categories to run only once, whatever --runs says")
+    parser.add_argument("--shard", default="1/1", help="i/n: run only the i-th of n slices of the remaining work")
+    parser.add_argument("--done-from", default="", help="a results file whose runs count as already done")
     parser.add_argument("--key-env", default="GROQ_API_KEY", help="name of the environment variable holding the API key")
     parser.add_argument("--merge", nargs="+", metavar="FILE", help="do not run anything: merge these result files "
                         "(same model) into the file named by --tag")
@@ -217,35 +244,33 @@ def main() -> None:
         model = init_chat_model(name, temperature=0, max_retries=5, api_key=os.environ[args.key_env])
 
     records = json.loads(json_path.read_text())["records"] if args.resume and json_path.exists() else []
-    done = {(record["id"], record.get("run", 1)) for record in records}
-    wanted = set(filter(None, args.only.split(",")))
+    earlier = json.loads(Path(args.done_from).read_text())["records"] if args.done_from else []
+    done = {(record["id"], record.get("run", 1)) for record in records + earlier}
     shard, shards = (int(part) for part in args.shard.split("/"))
-    # Slices can run at the same time, so each one gets its own sandbox folder.
-    work = WORK if shards == 1 else WORK.with_name(f".work_shard{shard}")
-    todo = [
-        (scenario, run)
-        for run in range(1, args.runs + 1)
-        for position, scenario in enumerate(load_scenarios())
-        if position % shards == shard - 1
-        and (scenario["id"], run) not in done
-        and (not wanted or scenario["id"] in wanted)
-    ]
+    todo = plan(args.runs, set(filter(None, args.once.split(","))), set(filter(None, args.only.split(","))), done)
+    todo = slice_of(todo, shard, shards)
+    # Slices can run at the same time, so each key gets its own sandbox folder.
+    work = WORK if args.key_env == "GROQ_API_KEY" else WORK.with_name(f".work_{args.key_env.lower()}")
 
+    stopped = False
     for scenario, run in todo:
         try:
             record = run_scenario(scenario, model, work)
         except Exception as error:  # e.g. the provider's daily quota: keep what we have
             print(f"STOPPED at {scenario['id']} (run {run}): {type(error).__name__}: {str(error)[:200]}")
+            stopped = True
             break
         record["run"] = run
         records.append(record)
         print(f"{'PASS' if record['success'] else 'FAIL'} {record['id']:42} run={run} steps={record['steps']} "
-              f"acc={record['step_accuracy']:.2f} stop={record['stop_reason']} ({record['final_state']})")
+              f"acc={record['step_accuracy']:.2f} stop={record['stop_reason']} ({record['final_state']})", flush=True)
         save(json_path, records, name)  # after every scenario, so an interrupted run can be resumed
         time.sleep(args.pause)
 
     if records:
         print(json.dumps(summarise(records, name), indent=2))
+    if stopped:
+        raise SystemExit(2)  # tells eval.run_team that this key cannot do more for now
 
 
 if __name__ == "__main__":
