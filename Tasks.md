@@ -49,9 +49,9 @@ tests/    test_stop.py  test_tools.py  test_idempotency.py  test_checkpoint.py  
 
 ### Phase 0 — Setup
 - [x] **T0.1** Read brief, write `Tasks.md` + `Progress.md`, `git init`, first commit.
-- [ ] **T0.2** Create GitHub repo and push (needs user: `gh` CLI is not installed — see Progress.md "Blocked").
+- [x] **T0.2** Create GitHub repo and push (`origin` = github.com/alaabousselmi/The-Operator).
 - [ ] **T0.3** Decide LLM provider + model (user decision). Code stays provider-neutral via `init_chat_model(os.environ["OPERATOR_MODEL"])`.
-- [ ] **T0.4** `pyproject.toml` with pinned deps (`langgraph`, `langchain`, provider package, `langgraph-checkpoint-sqlite`, `pydantic`, `pyyaml`, `pytest`), `.gitignore`, `.env.example`. One setup command: `pip install -e .`. Get instructor OK on the topic (due end of Week 11).
+- [ ] **T0.4** `pyproject.toml` with pinned deps (`langgraph`, `langchain`, provider package, `langgraph-checkpoint-sqlite`, `pydantic`, `pyyaml`, `pytest`), `.gitignore`, `.env.example`. One setup command: `pip install -e .`. (Topic approved by instructor.)
 
 ### Phase 1 — Stop rule first (brief: "Write the stopping condition first")
 - [ ] **T1.1** `agent/state.py`: `AgentState` = messages (`add_messages`), `remaining_steps: RemainingSteps`, `tokens_used: int`, `stop_reason: str | None`.

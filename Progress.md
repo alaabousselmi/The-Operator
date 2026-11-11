@@ -8,17 +8,19 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 |---|---|
 | Last updated | 2026-11-11 |
 | Current phase | 0 — Setup |
-| Last finished task | T0.1 |
-| Next task | T0.2 (GitHub repo) → T0.3 (pick LLM) → T0.4 → T1.1 |
+| Last finished task | T0.2 |
+| Next task | T0.3 (pick LLM, under discussion) → T0.4 → T1.1 |
+| Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
 | Code written | none yet |
 | Tests passing | n/a |
 
 ## Blocked / needs the user
 
-1. **GitHub repo (T0.2)**: `gh` CLI is not installed, so the repo could not be created from here. Local git repo exists with the first commit. Either install `gh` (`winget install GitHub.cli`, then `gh auth login`) or create an empty repo on github.com and give the URL; then `git remote add origin <url>; git push -u origin main`.
-2. **LLM provider/model (T0.3)**: not chosen. Needs an API key in `.env` before T5.5 only.
-3. **Instructor approval** of the topic by end of Week 11 (T0.4).
-4. **Team members** for the README Contributions section.
+1. **LLM provider/model (T0.3)**: under discussion with the user. Needs an API key in `.env` before T5.5 only; Phases 1-4 use the fake model.
+
+## Team (README Contributions)
+
+Alaaeddine Bousselmi · Mohamed Amine Zouaoui · Seifeddine Knani · Walid Fakhfakh. Topic approved by the instructor.
 
 ## Decisions (with reason)
 
@@ -38,6 +40,7 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 ## Log
 
 - 2026-11-11 — T0.1 done: brief read, LangGraph docs checked, `Tasks.md` / `Progress.md` written, local git repo initialised.
+- 2026-11-11 — T0.2 done: pushed to GitHub. Topic approved by instructor.
 
 ## Problems met (feeds postmortem.md)
 
