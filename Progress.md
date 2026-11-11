@@ -7,12 +7,12 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 | Field | Value |
 |---|---|
 | Last updated | 2026-11-11 |
-| Current phase | 3 — Tools (not started) |
-| Last finished task | T2.4 (Phases 1-2 complete) |
-| Next task | T3.1 (read tools) → T3.2, T3.3 (write tools) → T3.5 (tests) |
+| Current phase | 4 — Loop + human checkpoint (not started) |
+| Last finished task | T3.5 (Phases 1-3 complete) |
+| Next task | T4.1 (approval node in graph) → T4.2 → T4.3 (prompt) → T4.4 (CLI) → T4.5, T4.6 |
 | Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
-| Code written | Phase 1: `agent/{state,stop,graph}.py`, `eval/fake_model.py`. Phase 2: `sandbox/{paths,runner,faults,reset,seed,make_templates}.py` + `templates/` |
-| Tests passing | 40/40 (`.venv/Scripts/python -m pytest -q`) |
+| Code written | Phase 1: `agent/{state,stop,graph}.py`, `eval/fake_model.py`. Phase 2: `sandbox/*`. Phase 3: `agent/tools.py` (7 tools), `agent/calls.py` (tool node: errors + call log) |
+| Tests passing | 60/60 (`.venv/Scripts/python -m pytest -q`) |
 
 ## Blocked / needs the user
 
@@ -39,6 +39,7 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - 2026-11-11 — T0.3, T0.4 done: Groq chosen and documented, `DECISIONS.md` created, deps pinned and installed, imports verified.
 - 2026-11-11 — Phase 1 done: stop rule + minimal graph + fake model; 8 tests pass.
 - 2026-11-11 — Phase 2 done: sandbox runner, 9 faults, seed/reset; 40 tests pass.
+- 2026-11-11 — Phase 3 done: 7 tools, tool node with error formatting and call log; 60 tests pass.
 
 ## Sandbox facts for Phase 3
 
@@ -48,10 +49,20 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - After a reset runs are `run_0001..0003` (success); a seeded failure is `run_0004`.
 - Windows: always close SQLite connections (`contextlib.closing`) or reset cannot delete the db.
 
+## Tool facts for Phase 4
+
+- `build_graph(model, make_tools(work), limits, checkpointer, log_path=work / "tool_calls.jsonl")`.
+- `agent.tools.WRITE_TOOLS = {"update_job_config", "rerun_job"}` → the router must send these through `approval`.
+- A `ToolNode` cannot be invoked outside a graph; tests drive tools through `build_graph` + `FakeModel` (see `call_tools` in `tests/test_tools.py`).
+- Unknown tool names are answered by `ToolNode` itself ("... is not a valid tool, try one of [...]").
+- Tool results are compact JSON or plain text; errors start with `ERROR E_`. Wrapping results in `<tool_output>` tags is still to do (T4.3).
+
 ## Problems met (feeds postmortem.md)
 
 - Planned to use LangGraph `RemainingSteps` for the graceful stop; on reading its source it counts super-steps and depends on `recursion_limit`, so we switched to our own model-call counter (D6).
 - The doc pages did not show `ToolNode(handle_tool_errors=...)` but the installed source has it: docs summaries are not enough, check the installed code.
 - Multi-file bash heredocs failed on Windows Git Bash (quote parsing); files are now written one by one.
 - Sandbox snapshot test first counted SQLite's automatic index as a table; filter `sqlite_master` on `type = 'table'`.
+- First tool design put error handling in a wrapper inside each tool; that cannot see schema-validation failures (they happen before the tool body). Moved to `ToolNode` hooks (D8a).
+- Planned a model-supplied `idempotency_key` for `rerun_job`; realised the model could change it each call, so the key is now derived from the config hash (D8a).
 

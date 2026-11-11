@@ -83,6 +83,18 @@ Format: **Choice** · **Why** · **Rejected** · **Revisit if**.
 - **Rejected**: one generic "edit file" tool — unbounded damage; returning stack traces — the model cannot act on them and they leak paths.
 - **Revisit if**: the throttle proves unnecessary on the real account limits.
 
+## D8a — Tool details (as built in Phase 3)
+
+- **Seven tools, not more**: read `list_failed_runs`, `list_job_runs`, `get_run_logs`, `get_job_config`, `validate_config`; write `update_job_config`, `rerun_job`. **Why**: each maps to one step of a repair (find, inspect history, read evidence, read config, test a fix, apply, re-run). Fewer tools means fewer wrong-tool choices for a small model. The planned `get_run_status` was dropped because `rerun_job` already returns the result and `list_job_runs` shows status.
+- **Errors and logging through `ToolNode` hooks, replacing the "own wrapper" plan of D8**: `handle_tool_errors=format_error` and `wrap_tool_call=log_call` (`agent/calls.py`). **Why**: schema validation happens before a tool body runs, so a wrapper inside the tool could never catch or log bad arguments; the two hooks see every call, including rejected ones and calls to tools that do not exist. Verified by running it.
+- **Error text format**: `ERROR <CODE>: what happened. What to do next.` Codes: `E_BAD_ARGUMENTS`, `E_NOT_FOUND`, `E_NOT_ALLOWED`, `E_TOOL_FAILED`. **Why**: a stable prefix is easy for the model to recognise and for the eval to count; the hint tells the model its next step.
+- **`validate_config` dry run**: **Why**: lets the agent test a fix with no side effect, so the human is asked to approve a change that is already known to work. It also gives the eval a signal: writing without validating first is a weaker path.
+- **`changes` is a typed object with only the 8 known keys and bounded values** (batch ≤ 1 000, timeout ≤ 300, path must be `data/<name>.csv`, delimiter one of four). **Why**: the model cannot write a config the runner would reject for being out of range, and cannot add arbitrary keys.
+- **`target_table` can be added when missing but never changed**. **Why**: redirecting a load to another table is the most damaging thing a config write could do and no repair needs it; this blocks the "write to prod_users" injection in code, before the human is even asked.
+- **`update_job_config` idempotency**: same values → `no_change`, nothing written; the backup file is named after the old config's hash, so repeats cannot pile up copies; the file is replaced in one step (`os.replace`) so it is never half-written.
+- **`rerun_job` idempotency key is derived, not supplied by the model**: the key is (job, hash of current config); if the job's latest run already used that config, the existing run is returned. **Why**: the brief wants "the same call twice does not do the thing twice"; a model-supplied key can be changed by the model on every call and so guarantees nothing. Side benefit: re-running an unchanged broken config (a classic loop) is impossible. **Rejected**: `idempotency_key` argument (the original plan).
+- **Tools are created by `make_tools(work)`**. **Why**: the sandbox folder is fixed when the tools are built, so it is not an argument the model could change, and tests can point tools at a temporary folder.
+
 ## D9 — Tooling: Python 3.11, setuptools `pyproject.toml`, pinned versions, pytest
 
 - **Choice**: exact version pins (langgraph 1.2.20, langchain 1.4.10, langchain-groq 1.1.3, langgraph-checkpoint-sqlite 3.1.3); setup is `pip install -e .`.

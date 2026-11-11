@@ -7,14 +7,17 @@ Phase 4 adds the human `approval` node between the router and `tools`.
 
 from langchain.messages import AIMessage
 from langgraph.graph import END, START, StateGraph
-from langgraph.prebuilt import ToolNode
 
+from agent.calls import make_tool_node
 from agent.state import AgentState
 from agent.stop import Limits, hard_recursion_limit, stop_reason
 
 
-def build_graph(model, tools, limits: Limits = Limits(), checkpointer=None):
-    """Build and compile the agent graph for a chat model and a list of tools."""
+def build_graph(model, tools, limits: Limits = Limits(), checkpointer=None, log_path=None):
+    """Build and compile the agent graph for a chat model and a list of tools.
+
+    log_path: file where every tool call is logged (input, output, time).
+    """
     model_with_tools = model.bind_tools(tools)
 
     def llm(state: AgentState) -> dict:
@@ -42,7 +45,7 @@ def build_graph(model, tools, limits: Limits = Limits(), checkpointer=None):
 
     builder = StateGraph(AgentState)
     builder.add_node("llm", llm)
-    builder.add_node("tools", ToolNode(tools))
+    builder.add_node("tools", make_tool_node(tools, log_path))
     builder.add_node("finalize", finalize)
     builder.add_edge(START, "llm")
     builder.add_conditional_edges("llm", router, ["tools", "finalize"])
