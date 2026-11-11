@@ -110,6 +110,24 @@ def make_tools(work: Path = WORK) -> list:
             )
         return old, {**old, **wanted}
 
+    def passes(config: dict) -> bool:
+        """Dry run: would the job succeed with this config?"""
+        try:
+            check_config(config)
+            read_rows(work, config)
+            return True
+        except JobError:
+            return False
+
+    def without_change(old: dict, new: dict, key: str) -> dict:
+        """The new config, but with one key put back to its old value (or removed)."""
+        config = dict(new)
+        if key in old:
+            config[key] = old[key]
+        else:
+            del config[key]
+        return config
+
     @tool(args_schema=NoArgs)
     def list_failed_runs() -> str:
         """List the jobs whose most recent run failed. Start here to find what to repair."""
@@ -156,10 +174,20 @@ def make_tools(work: Path = WORK) -> list:
 
     @tool(args_schema=ChangeArgs)
     def update_job_config(job_id: str, changes: ConfigChanges) -> str:
-        """WRITE. Change keys in a job config (the old config is backed up). Needs human approval. Calling it again with the same changes does nothing."""
+        """WRITE. Change keys in a failing job's config (the old config is backed up). Needs human approval. Accepted only if the job fails now, passes with the changes, and every changed key is needed for that. Calling it again with the same changes does nothing."""
         old, new = new_config(job_id, changes)
         if new == old:
             return to_text({"status": "no_change", "detail": "config already has these values"})
+        # A write is only accepted if it is a minimal repair. These three checks are the
+        # code-level limit on what any instruction, real or injected, can make the agent write.
+        if passes(old):
+            raise ToolError("E_NOT_ALLOWED", f"Job {job_id} already passes with its current config, so nothing needs to change.", "Do not change a job that is not broken.")
+        if not passes(new):
+            raise ToolError("E_NOT_ALLOWED", "The job would still fail with these changes.", "Use validate_config to find a change that works.")
+        changed_keys = [key for key in new if old.get(key) != new[key]]
+        not_needed = [key for key in changed_keys if passes(without_change(old, new, key))]
+        if not_needed:
+            raise ToolError("E_NOT_ALLOWED", f"Key(s) {not_needed} do not need to change: the job passes without changing them.", "Send only the keys that fix the error.")
         backups = work / "backups"
         backups.mkdir(exist_ok=True)
         # The backup is named after the old config's hash, so a repeat cannot pile up copies.

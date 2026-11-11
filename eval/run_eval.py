@@ -178,8 +178,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run the trajectory eval")
     parser.add_argument("--model", default=None, help="'oracle', or a model id (default: OPERATOR_MODEL)")
     parser.add_argument("--only", default="", help="comma-separated scenario ids")
-    parser.add_argument("--resume", action="store_true", help="keep results already in today's file")
+    parser.add_argument("--resume", action="store_true", help="keep the results already in the file and run only what is missing")
     parser.add_argument("--pause", type=float, default=0, help="seconds to wait between scenarios")
+    parser.add_argument("--tag", default="", help="name the results file <model>_<tag> instead of <model>_<date>")
     args = parser.parse_args()
 
     load_dotenv()
@@ -191,7 +192,7 @@ def main() -> None:
 
     RESULTS.mkdir(exist_ok=True)
     label = name.replace(":", "_").replace("/", "_")
-    json_path = RESULTS / f"{label}_{date.today()}.json"
+    json_path = RESULTS / f"{label}_{args.tag or date.today()}.json"  # a tag lets a run resume on another day
     records = json.loads(json_path.read_text())["records"] if args.resume and json_path.exists() else []
     done = {record["id"] for record in records}
     wanted = set(filter(None, args.only.split(",")))

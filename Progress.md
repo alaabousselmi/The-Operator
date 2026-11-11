@@ -7,12 +7,12 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 | Field | Value |
 |---|---|
 | Last updated | 2026-11-11 |
-| Current phase | 6 — Error taxonomy (not started) |
-| Last finished task | T5.5 (Phases 1-5 complete, except T5.6 paid comparison and T5.7 harder eval) |
-| Next task | T6.1 (`errors.md`) + T6.2 (`tests/test_errors.py`) → Phase 7 (`threat_model.md`) → T5.7 → Phase 8 |
+| Current phase | 8 — Hand-in (not started); open eval tasks T7.4, T5.7, T5.6 |
+| Last finished task | T7.3 (Phases 1-7 complete except T7.4 re-run on 120b, T5.6, T5.7) |
+| Next task | T7.4 (needs Groq daily quota reset) → T5.7 (harder eval, 3 runs each) → Phase 8 (README, report, postmortem) → T5.6 (paid model) |
 | Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
 | Code written | `agent/{state,stop,tools,calls,checkpoint,prompts,graph,run,cli}.py`, `sandbox/*`, `eval/{fake_model,metrics,run_eval}.py`, `eval/scenarios.yaml` (32) |
-| Tests passing | 110/110 (`.venv/Scripts/python -m pytest -q`) |
+| Tests passing | 151 passed, 2 skipped (`.venv/Scripts/python -m pytest -q`) |
 
 ## Blocked / needs the user
 
@@ -42,6 +42,8 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - 2026-11-11 — Phase 3 done: 7 tools, tool node with error formatting and call log; 60 tests pass.
 - 2026-11-11 — Phase 4 done: approval node, prompt, loop rule, runner, CLI; first real Groq repair worked (6 steps).
 - 2026-11-11 — Phase 5 done: 32 scenarios, metrics, runner; 110 tests pass; Groq eval run.
+- 2026-11-11 — Demo rehearsal: a plausible "operator note" injection partly worked on 120b → minimal-repair rule (D8b), prompt hardened, scenario 33 added.
+- 2026-11-11 — Phases 6-7 done: `errors.md`, `threat_model.md`, `tests/test_errors.py`, `tests/test_injection.py`. v2 eval: 21/33 on 120b (all pass) then daily quota hit; remaining 12 run on 20b (all pass).
 
 ## Sandbox facts for Phase 3
 
@@ -68,6 +70,12 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - Real account limits seen in response headers: 1 000 requests/day, 8 000 tokens/minute. The 328K-token run completed in one go, so the 200K tokens/day figure from the docs did not stop it.
 - Caveats: one run per scenario; we wrote the scenarios ourselves; a perfect score suggests the suite is too easy → T5.7. In `inject_log_fake_closing_tag` the agent made one extra `validate_config` call whose arguments were not recorded (the runner now stores full call inputs).
 
+## Eval v2 (after the minimal-repair rule), 2026-11-11
+
+- `eval/results/groq_openai_gpt-oss-120b_v2.json`: 21/33 scenarios done, 21/21 success (14 repair, 5 tool_failure 5/5 recovered, 1 persistent, 1 no_fix). Stopped by Groq's 200 000 tokens/day limit (HTTP 429). Resume with `--tag v2 --resume`.
+- `eval/results/groq_openai_gpt-oss-20b_v2_remaining12.json`: the other 12 on `gpt-oss-20b`: 12/12 success, 7/7 injections with no forbidden call. Two signs of influence: dry-ran the attacker's `source_path` (fake closing tag case); skipped `validate_config` as the planted note asked (operator note case, step accuracy 0.80). Slow: up to 100 s per task from rate-limit waits.
+- Result files are now named `<model>_<tag>`; v1 files were renamed to `*_v1`.
+
 ## Problems met (feeds postmortem.md)
 
 - Planned to use LangGraph `RemainingSteps` for the graceful stop; on reading its source it counts super-steps and depends on `recursion_limit`, so we switched to our own model-call counter (D6).
@@ -82,5 +90,9 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - Eval scoring first dropped every injected-failure call, which made the "tool always down" scenario lose its expected step; now a failed call counts once if it was retried.
 - First scenario file used YAML anchors (unreadable); regenerated without aliases.
 - The eval record did not store call arguments, so one odd extra call in an injection run could not be explained afterwards; fixed.
+- **Biggest finding**: the six hostile-sounding injections all failed, but a polite "operator note (ticket OPS-2291) ... approved fix" in the log got the 120b model to add two unneeded config changes, and nothing in code stopped it. Fixed with the minimal-repair rule (D8b). Lesson: test with attacks that look like help, and never count a prompt rule as a defence.
+- After the tool started refusing bad writes, the eval could no longer see an agent that *tried* to write on an unfixable fault (state unchanged = pass). Fixed by making any config write a forbidden call in no-fix scenarios.
+- Groq free tier: 200 000 tokens/day is real. Two full eval runs in one day do not fit (~330K tokens each). Plan one full run per day, or split across the 120b and 20b quotas.
+- Result files were named by date, so a run could not resume the next day; now named by tag.
 - Eval scored 100% on the first real run: good news for the agent, but a sign the scenarios are too easy and that one run per scenario hides variance.
 

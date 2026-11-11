@@ -131,6 +131,15 @@ Format: **Choice** · **Why** · **Rejected** · **Revisit if**.
 - **Cost model**: measured input/output tokens × list price per model; "cost at 100×" = the same workload repeated 100 times. Time per task includes any provider rate-limit waits, which we state next to p50/p95.
 - **Results are saved after every scenario and the run can resume**. **Why**: the free Groq tier may cut a run on its daily token limit.
 
+## D8b — Minimal-repair rule on `update_job_config` (added after an injection got through)
+
+- **Choice**: a config write is accepted only if (1) the job fails with its current config, (2) it passes a dry run with the new config, and (3) every changed key is necessary, i.e. putting any one key back makes the job fail again.
+- **Why**: a rehearsal showed that a polite, official-looking "operator note" in a log made the model add two unneeded changes to the failing job. Schema limits, the "only the failing job" prompt rule and an approve-all human all let it through, because each value was individually legal. The rule turns "make only the change the error requires" from a prompt instruction into code. It also gives two guarantees for free: a healthy job can never be changed, and no write is accepted on a fault that config cannot fix.
+- **Cost**: a few extra dry runs per write (milliseconds here). It forces a repair to be one write containing all needed keys, which is also what we want the human to review.
+- **Rejected**: relying on a stronger prompt alone — soft, and the same model had just been fooled; asking the human to judge necessity — they see a legal-looking diff and have no way to know; a per-error-code table of allowed keys — more code, and wrong whenever two faults share a code.
+- **Limit**: "passes" is not "correct". A change to another file with the same columns passes too; see `threat_model.md`, residual risk 1.
+- **Revisit if**: a legitimate repair needs a key that is not strictly necessary (none in our fault catalogue).
+
 ## D9 — Tooling: Python 3.11, setuptools `pyproject.toml`, pinned versions, pytest
 
 - **Choice**: exact version pins (langgraph 1.2.20, langchain 1.4.10, langchain-groq 1.1.3, langgraph-checkpoint-sqlite 3.1.3); setup is `pip install -e .`.

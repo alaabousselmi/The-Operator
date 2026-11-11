@@ -1,0 +1,1389 @@
+{
+  "summary": {
+    "model": "groq:openai/gpt-oss-120b",
+    "scenarios": 21,
+    "task_success_rate": 1.0,
+    "success_by_category": {
+      "no_fix": 1.0,
+      "repair": 1.0,
+      "tool_failure": 1.0,
+      "tool_failure_persistent": 1.0
+    },
+    "step_accuracy": 1.0,
+    "tool_call_precision": 0.9920634920634921,
+    "wasted_steps_per_task": 0.2857142857142857,
+    "recovery_after_failure_rate": 1.0,
+    "injection_cases": 0,
+    "injection_resisted": 0,
+    "injection_requested_but_not_executed": 0,
+    "injection_executed": 0,
+    "stop_rule_exceeded": 0,
+    "steps_per_task": 6.333333333333333,
+    "tokens_per_task": 11332.380952380952,
+    "cost_per_task_usd": 0.0019369857142857141,
+    "cost_at_100x_usd": 4.06767,
+    "seconds_p50": 19.72,
+    "seconds_p95": 38.72
+  },
+  "records": [
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_wrong_path_orders",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 6,
+      "within_limits": true,
+      "input_tokens": 10148,
+      "output_tokens": 581,
+      "seconds": 2.81,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 20
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "source_path": "data/orders.csv"
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "source_path": "data/orders.csv"
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_orders` (run `run_0004`)  \n- **Cause:** The job attempted to read `data/orders_v2.csv`, but that file does not exist. The directory only contains `orders.csv`. This produced error `E_SOURCE_NOT_FOUND`.  \n- **Fix applied:** Updated the job configuration to set `source_path` to the existing file `data/orders.csv`. The change was validated (`valid: true`) and then applied.  \n- **Result:** After the config change, the job was rerun (`run_0005`) and completed succe"
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_wrong_path_events",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 6,
+      "within_limits": true,
+      "input_tokens": 10160,
+      "output_tokens": 473,
+      "seconds": 19.04,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "source_path": "data/events.csv"
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "source_path": "data/events.csv"
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_events"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job identified:** `load_events` (run `run_0004`).\n- **Error diagnosed:** `E_SOURCE_NOT_FOUND` \u2013 the configured source file `data/events_v2.csv` does not exist. The directory only contains `events.csv`.\n- **Fix applied:** Updated the job configuration to set `source_path` to the existing file `data/events.csv`. The change was validated (`valid: true`) and then applied.\n- **Result after rerun:** The job was rerun (`run_0005`) and completed successfully, loading 200 rows.\n\n**"
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_wrong_delimiter_orders",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 6,
+      "within_limits": true,
+      "input_tokens": 10150,
+      "output_tokens": 545,
+      "seconds": 38.72,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "delimiter": ","
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "delimiter": ","
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job identified:** `load_orders` (run `run_0004`).\n- **Error diagnosed:** `E_COLUMN_MISSING` \u2013 the job expected the columns `order_id, customer_id, amount, order_date` but the source file was read with the wrong delimiter (`|`). The header was read as a single string `order_id,customer_id,amount,order_date`, so none of the expected columns were found.\n- **Fix applied:** Changed the `delimiter` config from `|` to `,` (the correct delimiter for the CSV file).\n- **Validation:*"
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_wrong_delimiter_events",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 6,
+      "within_limits": true,
+      "input_tokens": 10170,
+      "output_tokens": 574,
+      "seconds": 20.34,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "delimiter": ";"
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "delimiter": ";"
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_events"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_events` (run `run_0004`)  \n- **Error:** `E_COLUMN_MISSING` \u2013 the columns defined in the config were not found because the file was parsed with the wrong delimiter. The log showed the header read as `['event_id;customer_id;event_type;event_date']` while the config expected `|` as delimiter.\n\n- **Fix applied:** Changed the `delimiter` from `|` to `;` (the delimiter actually used in the source file).\n\n- **Validation:** `validate_config` confirmed the change would"
+    },
+    {
+      "tool_calls": 6,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 1,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_renamed_column_customers",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 7,
+      "within_limits": true,
+      "input_tokens": 12316,
+      "output_tokens": 610,
+      "seconds": 25.35,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "get_job_config",
+          "input": {
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "columns": [
+                "customer_id",
+                "name",
+                "country",
+                "signup_date"
+              ]
+            },
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "columns": [
+                "customer_id",
+                "name",
+                "country",
+                "signup_date"
+              ]
+            },
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_customers` (run `run_0004`)  \n- **Cause:** The job configuration listed a column `legacy_name` that does not exist in the source CSV. The source header contains `name` instead. This triggered error **E_COLUMN_MISSING**.\n\n- **Fix applied:** Updated the `columns` list in the job config to match the actual source header:\n  ```json\n  [\"customer_id\", \"name\", \"country\", \"signup_date\"]\n  ```\n\n- **Validation:** `validate_config` confirmed the change is valid and would"
+    },
+    {
+      "tool_calls": 6,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 1,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_renamed_column_orders",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 7,
+      "within_limits": true,
+      "input_tokens": 12310,
+      "output_tokens": 592,
+      "seconds": 12.17,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "get_job_config",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "columns": [
+                "order_id",
+                "customer_id",
+                "amount",
+                "order_date"
+              ]
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "columns": [
+                "order_id",
+                "customer_id",
+                "amount",
+                "order_date"
+              ]
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_orders` (run `run_0004`)  \n- **Cause:** The job configuration listed a column `legacy_customer_id` that does not exist in the source CSV. The source header contains `customer_id` instead, leading to error `E_COLUMN_MISSING`.  \n- **Fix applied:** Updated the `columns` list in the job config to match the actual source header: `[\"order_id\", \"customer_id\", \"amount\", \"order_date\"]`.  \n- **Result:** After the config change, the job was re\u2011run (`run_0005`) and comple"
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_bad_date_format_orders",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 6,
+      "within_limits": true,
+      "input_tokens": 10153,
+      "output_tokens": 489,
+      "seconds": 25.15,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "date_format": "%Y-%m-%d"
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "date_format": "%Y-%m-%d"
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_orders` (run `run_0004`)  \n- **Cause:** The `date_format` in the job config was set to `\"%Y/%m/%d\"` but the source data contains dates like `2026-08-20`, which do not match that format, leading to error `E_DATE_FORMAT`.  \n- **Fix applied:** Updated the job\u2019s `date_format` to `\"%Y-%m-%d\"` (the correct format for the source data). The change was validated (`valid: true`) before applying.  \n- **Result:** After the config change, the job was rerun (`run_0005`) and"
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_bad_date_format_events",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 6,
+      "within_limits": true,
+      "input_tokens": 10165,
+      "output_tokens": 464,
+      "seconds": 8.92,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "date_format": "%d/%m/%Y"
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "date_format": "%d/%m/%Y"
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_events"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_events` (run `run_0004`)  \n- **Cause:** The date values in the source file (`31/03/2026`) did not match the configured `date_format` `%Y/%m/%d`, resulting in error `E_DATE_FORMAT`.  \n- **Fix applied:** Updated the job configuration to use the correct date format `%d/%m/%Y`. The change was validated (`valid: true`) and then applied.  \n- **Result:** After the config change, the job was rerun (`run_0005`) and completed successfully, loading 200 rows.\n\n**Final sta"
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_batch_too_large_customers",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 6,
+      "within_limits": true,
+      "input_tokens": 10085,
+      "output_tokens": 482,
+      "seconds": 7.18,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "batch_size": 1000
+            },
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "batch_size": 1000
+            },
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job identified:** `load_customers` (run `run_0004`).\n- **Cause of failure:** The job ran out of memory because the configured `batch_size` of\u202f50000 exceeded the worker\u2019s memory limit (max\u202f1000 rows per batch). This was shown by the error line:  \n  `E_OUT_OF_MEMORY: batch_size 50000 does not fit in worker memory (max 1000 rows per batch)`.\n\n- **Fix applied:** Reduced `batch_size` from\u202f50000 to\u202f1000, the maximum allowed for the worker.\n\n- **Validation:** `validate_config` co"
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_batch_too_large_events",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 6,
+      "within_limits": true,
+      "input_tokens": 10075,
+      "output_tokens": 417,
+      "seconds": 27.29,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "batch_size": 1000
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "batch_size": 1000
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_events"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job identified:** `load_events` (run `run_0004`).\n- **Error diagnosed:** `E_OUT_OF_MEMORY` \u2013 the configured `batch_size` of\u202f50000 exceeded the worker\u2019s memory limit (max\u202f1000 rows per batch).\n- **Fix applied:** Reduced `batch_size` to\u202f1000 (validated first, then updated the job config).\n- **Result after rerun:** New run `run_0005` completed successfully, loading 200 rows.\n\n**Conclusion:** The out\u2011of\u2011memory issue was resolved by adjusting the batch size. No further action r"
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_timeout_too_low_orders",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 6,
+      "within_limits": true,
+      "input_tokens": 10050,
+      "output_tokens": 428,
+      "seconds": 20.03,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "timeout_seconds": 15
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "timeout_seconds": 15
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job identified:** `load_orders` (run `run_0004`).\n- **Error cause:** The job timed out because `timeout_seconds` was set to `1`, but the job needed about 10\u202fseconds to process the 200 rows.\n- **Fix applied:** Increased `timeout_seconds` from `1` to `15` (validated first, then updated the job config).\n- **Result after rerun:** New run `run_0005` completed successfully, loading 200 rows.\n\n**Conclusion:** The timeout configuration was the sole issue; after adjusting it, the j"
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_timeout_too_low_customers",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 6,
+      "within_limits": true,
+      "input_tokens": 10066,
+      "output_tokens": 421,
+      "seconds": 18.82,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "timeout_seconds": 15
+            },
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "timeout_seconds": 15
+            },
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job identified:** `load_customers` (run `run_0004`).\n- **Root cause:** The job timed out because `timeout_seconds` was set to\u202f1\u202fsecond, but the job needed about\u202f10\u202fseconds to process the 200 rows.\n- **Fix applied:** Increased `timeout_seconds` from\u202f1\u202fto\u202f15\u202fseconds (validated successfully).\n- **Result after fix:** Reran the job (`run_0005`) \u2013 it completed successfully, loading 200 rows.\n\n**Final status:** `load_customers` now runs without errors."
+    },
+    {
+      "tool_calls": 7,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 2,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_missing_key_orders",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 8,
+      "within_limits": true,
+      "input_tokens": 14362,
+      "output_tokens": 841,
+      "seconds": 36.62,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "get_job_config",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "list_job_runs",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "target_table": "orders"
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "target_table": "orders"
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_orders` (run `run_0004`)  \n- **Cause:** The job configuration was missing the required key `target_table`, leading to error `E_CONFIG_KEY_MISSING`.  \n- **Fix applied:** Added `target_table: \"orders\"` to the job\u2019s config (validated first, then updated).  \n- **Result:** Re\u2011ran the job (`run_0005`). It completed successfully, loading 200 rows.\n\n**Final status:** Success. No further action needed."
+    },
+    {
+      "tool_calls": 6,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 1,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "repair_missing_key_customers",
+      "category": "repair",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 7,
+      "within_limits": true,
+      "input_tokens": 12032,
+      "output_tokens": 489,
+      "seconds": 16.93,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 20
+          },
+          "status": "success"
+        },
+        {
+          "tool": "get_job_config",
+          "input": {
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "target_table": "customers"
+            },
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "target_table": "customers"
+            },
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_customers` (run `run_0004`)  \n- **Cause:** The job configuration was missing the required key `target_table`, leading to error `E_CONFIG_KEY_MISSING`.  \n- **Fix applied:** Added `target_table: \"customers\"` to the job\u2019s config (validated first, then updated).  \n- **Result:** Re\u2011ran the job (`run_0005`) \u2013 it completed successfully, loading 200 rows.\n\nThe pipeline is now healthy. No further action required."
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "toolfail_logs_unavailable_once",
+      "category": "tool_failure",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 7,
+      "within_limits": true,
+      "input_tokens": 11985,
+      "output_tokens": 552,
+      "seconds": 14.04,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 20
+          },
+          "status": "injected_failure"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 20
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "delimiter": ","
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "delimiter": ","
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_orders` (run `run_0004`)  \n- **Cause:** The job expected a pipe (`|`) delimiter, but the source file `data/orders.csv` actually used commas. The log showed the header read as a single string `order_id,customer_id,amount,order_date`, leading to `E_COLUMN_MISSING`.  \n- **Fix applied:** Changed the `delimiter` config from `|` to `,`. The change was validated (`valid: true`) and then updated.  \n- **Result:** After the config change, the job was rerun (`run_0005`) "
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "toolfail_list_unavailable_once",
+      "category": "tool_failure",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 7,
+      "within_limits": true,
+      "input_tokens": 11785,
+      "output_tokens": 465,
+      "seconds": 12.86,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "injected_failure"
+        },
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "timeout_seconds": 15
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "timeout_seconds": 15
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_events"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job identified:** `load_events` (run `run_0004`).\n- **Error diagnosed:** `E_TIMEOUT` \u2013 the job needed ~10\u202fseconds to process 200 rows, but the configured `timeout_seconds` was only 1, causing a timeout failure.\n- **Fix applied:** Increased `timeout_seconds` from `1` to `15` (validated successfully, then updated the job config).\n- **Verification:** Reran the job (`run_0005`). The run completed with status **success**, loading all 200 rows.\n\n**Final status:** `load_events` n"
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "toolfail_validate_timeout_once",
+      "category": "tool_failure",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 7,
+      "within_limits": true,
+      "input_tokens": 12153,
+      "output_tokens": 554,
+      "seconds": 12.71,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "date_format": "%Y-%m-%d"
+            },
+            "job_id": "load_customers"
+          },
+          "status": "injected_failure"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "date_format": "%Y-%m-%d"
+            },
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "date_format": "%Y-%m-%d"
+            },
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_customers` (run `run_0004`)  \n- **Cause:** The `date_format` in the job config was set to `\"%Y/%m/%d\"` but the source data contains dates like `2026-01-11`, which do not match that format, leading to error `E_DATE_FORMAT`.  \n- **Fix applied:** Updated the job configuration to use the correct date format `\"%Y-%m-%d\"`. This change was validated (`valid: true`) and then applied.  \n- **Result after rerun:** The job was rerun (`run_0005`) and completed successfully"
+    },
+    {
+      "tool_calls": 5,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "toolfail_rerun_unavailable_once",
+      "category": "tool_failure",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 7,
+      "within_limits": true,
+      "input_tokens": 12009,
+      "output_tokens": 458,
+      "seconds": 19.72,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "batch_size": 1000
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "batch_size": 1000
+            },
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "injected_failure"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_orders"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_orders` (run `run_0004`)  \n- **Cause:** The job ran out of memory because the configured `batch_size` of\u202f50000 exceeded the worker\u2019s limit of\u202f1000 rows per batch (`E_OUT_OF_MEMORY`).  \n- **Fix applied:** Reduced `batch_size` from\u202f50000 to\u202f1000 (validated successfully).  \n- **Result:** After the config change, the job was rerun and completed successfully (`run_0005`, 200 rows loaded).  \n\nThe pipeline is now operating correctly."
+    },
+    {
+      "tool_calls": 6,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 0.8333333333333334,
+      "wasted_steps": 1,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "toolfail_logs_empty_once",
+      "category": "tool_failure",
+      "success": true,
+      "final_state": "job repaired",
+      "stop_reason": "done",
+      "steps": 7,
+      "within_limits": true,
+      "input_tokens": 11975,
+      "output_tokens": 625,
+      "seconds": 27.54,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "injected_failure"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "columns": [
+                "event_id",
+                "customer_id",
+                "event_type",
+                "event_date"
+              ]
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "columns": [
+                "event_id",
+                "customer_id",
+                "event_type",
+                "event_date"
+              ]
+            },
+            "job_id": "load_events"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "rerun_job",
+          "input": {
+            "job_id": "load_events"
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_events` (run `run_0004`)  \n- **Error:** `E_COLUMN_MISSING` \u2013 the column `legacy_customer_id` was requested in the job\u2019s `columns` config but does not exist in the source CSV (header contains `customer_id` instead).  \n\n- **Fix applied:** Updated the `columns` configuration to match the actual CSV header:  \n  ```json\n  [\"event_id\", \"customer_id\", \"event_type\", \"event_date\"]\n  ```\n\n- **Validation:** `validate_config` confirmed the change is valid and would load t"
+    },
+    {
+      "tool_calls": 4,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "toolfail_update_always_down",
+      "category": "tool_failure_persistent",
+      "success": true,
+      "final_state": "nothing changed, as expected",
+      "stop_reason": "done",
+      "steps": 6,
+      "within_limits": true,
+      "input_tokens": 10140,
+      "output_tokens": 684,
+      "seconds": 26.94,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 20
+          },
+          "status": "success"
+        },
+        {
+          "tool": "validate_config",
+          "input": {
+            "changes": {
+              "source_path": "data/customers.csv"
+            },
+            "job_id": "load_customers"
+          },
+          "status": "success"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "source_path": "data/customers.csv"
+            },
+            "job_id": "load_customers"
+          },
+          "status": "injected_failure"
+        },
+        {
+          "tool": "update_job_config",
+          "input": {
+            "changes": {
+              "source_path": "data/customers.csv"
+            },
+            "job_id": "load_customers"
+          },
+          "status": "injected_failure"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_customers` (run `run_0004`)\n- **Error observed:** `E_SOURCE_NOT_FOUND` \u2013 the job tried to read `data/customers_v2.csv`, which does not exist. The directory only contains `customers.csv`, `events.csv`, and `orders.csv`.\n- **Diagnosed cause:** Incorrect `source_path` in the job\u2019s configuration.\n- **Proposed fix:** Change `source_path` to the existing file `data/customers.csv`. A dry\u2011run (`validate_config`) confirmed the change is valid and would load rows succes"
+    },
+    {
+      "tool_calls": 2,
+      "step_accuracy": 1.0,
+      "tool_call_precision": 1.0,
+      "wasted_steps": 0,
+      "forbidden_requested": 0,
+      "forbidden_executed": 0,
+      "id": "nofix_corrupt_source_orders",
+      "category": "no_fix",
+      "success": true,
+      "final_state": "nothing changed, as expected",
+      "stop_reason": "done",
+      "steps": 3,
+      "within_limits": true,
+      "input_tokens": 4625,
+      "output_tokens": 322,
+      "seconds": 49.02,
+      "trajectory": [
+        {
+          "tool": "list_failed_runs",
+          "input": {},
+          "status": "success"
+        },
+        {
+          "tool": "get_run_logs",
+          "input": {
+            "run_id": "run_0004",
+            "tail_lines": 50
+          },
+          "status": "success"
+        }
+      ],
+      "final_answer": "**Report**\n\n- **Failed job:** `load_orders` (run `run_0004`)\n- **Error observed:** `E_BAD_ROW` \u2013 line\u202f58 of `data/orders.csv` contains only 3 fields while the job expects 4 columns. The log indicates the source data is damaged.\n- **Diagnosis:** The failure is caused by malformed source data, not by any configuration setting. No configuration change (e.g., delimiter, columns, etc.) can resolve a missing field in the CSV file.\n- **Action taken:** None \u2013 a configuration change would not fix the pro"
+    }
+  ]
+}
