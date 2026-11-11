@@ -9,10 +9,10 @@ Read this file first in a new session, then only the task you are on in `Tasks.m
 | Last updated | 2026-11-11 |
 | Current phase | 8 — Hand-in: documents written; open items below |
 | Last finished task | T8.4 (all phases have a first complete version) |
-| Next task | T7.4 (5 injection cases left on 120b) → T5.7 step 1 (tougher scenarios) → team runs shards (T5.7 steps 2-4) → fill Contributions (user) → T5.6 (paid model) → T8.5 freeze |
+| Next task | T5.7 step 3 (user adds 3 keys to `.env`) → step 4 `python -m eval.run_team --tag v3 --runs 3` (this also covers T7.4) → step 5 update documents → fill Contributions (user) → T5.6 → T8.5 freeze |
 | Repo | https://github.com/alaabousselmi/The-Operator (branch `main`) |
 | Code written | `agent/{state,stop,tools,calls,checkpoint,prompts,graph,run,cli}.py`, `sandbox/*`, `eval/{fake_model,metrics,run_eval}.py`, `eval/scenarios.yaml` (32) |
-| Tests passing | 152 passed, 2 skipped (`.venv/Scripts/python -m pytest -q`) |
+| Tests passing | 166 passed, 4 skipped (`.venv/Scripts/python -m pytest -q`) |
 
 ## Blocked / needs the user
 
@@ -48,6 +48,7 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - 2026-11-11 — Demo rehearsal: a plausible "operator note" injection partly worked on 120b → minimal-repair rule (D8b), prompt hardened, scenario 33 added.
 - 2026-11-11 — Phases 6-7 done: `errors.md`, `threat_model.md`, `tests/test_errors.py`, `tests/test_injection.py`. v2 eval: 21/33 on 120b (all pass) then daily quota hit; remaining 12 run on 20b (all pass).
 - 2026-11-11 — Phase 8 first version: `README.md`, `report.md`/`report.pdf`, `postmortem.md`; 120b v2 resumed to 28/33; clean-clone test passed.
+- 2026-11-11 — Eval runner: repeats, shards, merge, parallel runner per key; 4 tougher injection scenarios (37 total); 166 tests pass.
 
 ## Sandbox facts for Phase 3
 
@@ -86,11 +87,15 @@ All in `DECISIONS.md` (D1-D9). Read only the entry you need. Summary: custom Lan
 - Numbers used in README/report (120b v2, 28 scenarios): step accuracy 1.00, precision 0.99, wasted 0.25, steps 5.93, tokens 10 593 (282 038 in + 14 569 out), $0.0018/task, p50 20.0 s, p95 55.7 s.
 - When T7.4 completes: update the v2 column in `README.md` and `report.md`, run `python tools/build_report.py`, update `threat_model.md` §6.
 
-## Team-split eval (added 2026-11-11)
+## Parallel eval with 4 keys (2026-11-11)
 
-- `eval/run_eval.py` has `--runs N` (repeat each scenario), `--shard i/n` (run one of n slices) and `--merge files` (combine result files of the same model). Records carry a `run` number; the summary reports `runs`, `unstable_scenarios`, `always_failing_scenarios`.
-- Plan: each teammate runs one shard with their own key on their own machine and commits only the result file. Do not put several people's keys into one runner: keys must not be shared, and pooling accounts to get around a provider's rate limit is likely against its terms (not checked in Groq's terms; check before doing it).
-- All parts must be run from the same commit, same model, temperature 0.
+- User decision: run all slices on this machine with the team's 4 Groq keys (teammates sent their keys), instead of each teammate running a slice. No prompt trimming in v1 (user decision): tokens per task stay ~10.6K.
+- I flagged once that pooling accounts may be against Groq's terms (not checked); the user chose to proceed.
+- `python -m eval.run_team --tag v3 --runs 3`: finds `GROQ_API_KEY`, `GROQ_API_KEY_2..9` in `.env`, starts one `run_eval --shard i/n --key-env NAME` per key in parallel, each in `sandbox/.work_shard<i>`, then merges into `eval/results/<model>_v3.json`. Resumable: run the same command again.
+- `run_eval` options: `--runs`, `--shard i/n`, `--key-env`, `--merge`. Records carry `run`; summary has `runs`, `unstable_scenarios`, `always_failing_scenarios`.
+- As of now only `GROQ_API_KEY` is in `.env`; its 120b quota was exhausted earlier today.
+- Scenario file is now 37 scenarios (regenerated from a scratch script; edit `eval/scenarios.yaml` directly from now on). v1/v2 results cover the first 32/33 only.
+- Old v2 file (`*_v2.json`, 28/33) stays as the record of the first post-fix run; v3 replaces it as the headline result once complete.
 
 ## Problems met (feeds postmortem.md)
 

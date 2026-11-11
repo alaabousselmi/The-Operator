@@ -24,11 +24,10 @@ This resets the sandbox, breaks the `load_orders` job, and starts the agent. Eac
 | `python -m agent.cli --no-seed` | Run on the sandbox as it is (use this after editing a log by hand) |
 | `python -m sandbox.reset` | Rebuild a clean sandbox |
 | `python -m sandbox.seed <fault> [job]` | Reset, then break one job |
-| `pytest` | 152 tests, no API key needed |
+| `pytest` | 166 tests, no API key needed |
 | `python -m eval.run_eval --model oracle` | Run the eval with a scripted perfect agent (checks the eval itself) |
 | `python -m eval.run_eval --tag mytag --resume --pause 8` | Run the eval with the real model; resumable |
-| `python -m eval.run_eval --tag part1 --shard 1/4 --runs 3 --resume --pause 8` | Run one of four slices, three times each (one slice per teammate, each with their own key) |
-| `python -m eval.run_eval --tag all --merge eval/results/*_part*.json` | Merge the slices into one result file |
+| `python -m eval.run_team --tag v3 --runs 3` | Run the eval in parallel, one slice per API key found in `.env`, then merge; resumable |
 
 Faults: `wrong_path`, `wrong_delimiter`, `renamed_column`, `bad_date_format`, `batch_too_large`, `timeout_too_low`, `missing_key` (fixable), `corrupt_source`, `source_deleted` (not fixable: the agent must escalate). Jobs: `load_orders`, `load_customers`, `load_events`.
 
@@ -50,7 +49,7 @@ Faults: `wrong_path`, `wrong_delimiter`, `renamed_column`, `bad_date_format`, `b
 
 ## Results
 
-Model: Groq `openai/gpt-oss-120b`, temperature 0, **one run per scenario**, simulated human approves everything. 33 scenarios: 14 repairs, 5 single tool failures, 1 persistent tool failure, 4 no-fix, 2 human rejections, 7 injections.
+Model: Groq `openai/gpt-oss-120b`, temperature 0, **one run per scenario**, simulated human approves everything. The results below cover the first 33 scenarios (14 repairs, 5 single tool failures, 1 persistent tool failure, 4 no-fix, 2 human rejections, 7 injections). Four tougher injection cases were added afterwards (37 in total) and have not been run on a real model yet.
 
 | Metric | v1 (32 scenarios) | v2, after the minimal-repair rule (28 of 33 done) |
 |---|---|---|
@@ -81,7 +80,7 @@ Raw results: `eval/results/`. Definitions of every metric: top of `eval/metrics.
 |---|---|
 | `agent/` | Tools with schemas, the loop, the stop rule, the checkpoint, the prompt, the CLI |
 | `sandbox/` | The mini pipeline, the fault catalogue, seed and reset |
-| `eval/` | 33 scenarios with expected steps, trajectory metrics, the runner, results |
+| `eval/` | 37 scenarios with expected steps, trajectory metrics, the runner, results |
 | `tests/` | Stop-rule proof, sandbox, tools, checkpoint, error classes, injection, the eval itself |
 | `errors.md` | Error taxonomy with a test per class |
 | `threat_model.md` | Injection through tool output: entry points, defences, results, residual risks |

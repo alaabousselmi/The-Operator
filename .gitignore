@@ -8,3 +8,5 @@ __pycache__/
 sandbox/.work/
 *.db
 sandbox/checkpoints.db*
+sandbox/.work_shard*/
+eval/results/*.log

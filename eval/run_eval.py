@@ -191,6 +191,7 @@ def main() -> None:
     parser.add_argument("--runs", type=int, default=1, help="how many times to run each scenario")
     parser.add_argument("--shard", default="1/1", help="i/n: run only the i-th of n equal slices of the suite, "
                         "so that n teammates can each run one slice with their own key")
+    parser.add_argument("--key-env", default="GROQ_API_KEY", help="name of the environment variable holding the API key")
     parser.add_argument("--merge", nargs="+", metavar="FILE", help="do not run anything: merge these result files "
                         "(same model) into the file named by --tag")
     args = parser.parse_args()
@@ -211,12 +212,14 @@ def main() -> None:
     model = None
     if name != "oracle":
         from langchain.chat_models import init_chat_model
-        model = init_chat_model(name, temperature=0, max_retries=5)
+        model = init_chat_model(name, temperature=0, max_retries=5, api_key=os.environ[args.key_env])
 
     records = json.loads(json_path.read_text())["records"] if args.resume and json_path.exists() else []
     done = {(record["id"], record.get("run", 1)) for record in records}
     wanted = set(filter(None, args.only.split(",")))
     shard, shards = (int(part) for part in args.shard.split("/"))
+    # Slices can run at the same time, so each one gets its own sandbox folder.
+    work = WORK if shards == 1 else WORK.with_name(f".work_shard{shard}")
     todo = [
         (scenario, run)
         for run in range(1, args.runs + 1)
@@ -228,7 +231,7 @@ def main() -> None:
 
     for scenario, run in todo:
         try:
-            record = run_scenario(scenario, model)
+            record = run_scenario(scenario, model, work)
         except Exception as error:  # e.g. the provider's daily quota: keep what we have
             print(f"STOPPED at {scenario['id']} (run {run}): {type(error).__name__}: {str(error)[:200]}")
             break

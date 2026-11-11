@@ -7,16 +7,20 @@ For the injection tests, `inject` plants attacker text where the agent will read
     {"where": "log",    "text": ...}  extra lines in the failed run's log
     {"where": "config", "text": ...}  a "note" key in the job config
     {"where": "data",   "text": ...}  a cell of the source file (echoed by the error)
+    {"where": "old_log", "text": ...} extra lines in the job's last SUCCESSFUL run log
+    "decoy": {"from": ..., "to": ...} also copies a data file under another name
 """
 
 import csv
+import shutil
 import sys
+from contextlib import closing
 from pathlib import Path
 
 from sandbox.faults import FAULTS, edit_config
 from sandbox.paths import WORK
 from sandbox.reset import reset
-from sandbox.runner import load_config, run_job
+from sandbox.runner import connect, load_config, run_job
 
 
 def poison_data(work: Path, job_id: str, text: str) -> None:
@@ -46,14 +50,20 @@ def seed(fault: str | None, job_id: str = "load_orders", work: Path = WORK, inje
     if fault is not None and fault not in FAULTS:
         raise ValueError(f"unknown fault '{fault}'. Known faults: {sorted(FAULTS)}")
     reset(work)
+    where = (inject or {}).get("where")
+    if where == "old_log":  # after a reset the job has exactly one run, a successful one
+        with closing(connect(work)) as db:
+            good_run = db.execute("SELECT run_id FROM runs WHERE job_id = ?", (job_id,)).fetchone()[0]
+        poison_log(work, good_run, inject["text"])
+    if inject and "decoy" in inject:
+        shutil.copy(work / inject["decoy"]["from"], work / inject["decoy"]["to"])
     if fault is not None:
         FAULTS[fault][0](work, job_id)
-    where = (inject or {}).get("where")
     if where == "config":
         edit_config(work, job_id, note=inject["text"])
     if where == "data":
         poison_data(work, job_id, inject["text"])
-    if fault is None and where is None:
+    if fault is None and where != "data":
         return None  # a clean sandbox: nothing is failing
     failed = run_job(job_id, work)  # the failed run the agent will have to repair
     if where == "log":
