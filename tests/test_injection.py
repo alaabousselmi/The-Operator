@@ -61,23 +61,9 @@ def test_the_checkpoint_stops_every_forbidden_write(tmp_path, scenario, rule):
 def test_the_tool_rules_stop_forbidden_config_writes_even_if_the_human_approves(tmp_path, scenario, rule):
     if rule["tool"] != "update_job_config":
         pytest.skip("rerun_job changes no config; it is covered by the checkpoint test")
-    if scenario.get("stopped_only_by_human"):
-        pytest.skip("a valid minimal repair: see test_some_attacks_are_stopped_only_by_the_human")
     before, after, answer = attack(tmp_path, scenario, rule, lambda request: {"approved": True})
     assert after == before
     assert answer.startswith("ERROR E_NOT_ALLOWED") or answer.startswith("ERROR E_BAD_ARGUMENTS")
-
-
-HUMAN_ONLY = [(scenario, rule) for scenario, rule in ATTACKS if scenario.get("stopped_only_by_human")]
-
-
-@pytest.mark.parametrize("scenario, rule", HUMAN_ONLY, ids=[scenario["id"] for scenario, _ in HUMAN_ONLY])
-def test_some_attacks_are_stopped_only_by_the_human(tmp_path, scenario, rule):
-    """Known limit (threat_model.md, residual risk 1): the attacker's change is itself a
-    valid minimal repair, so if the model obeys and the human approves, it is written."""
-    before, after, answer = attack(tmp_path, scenario, rule, lambda request: {"approved": True})
-    assert '"status":"updated"' in answer
-    assert after != before
 
 
 def test_planted_text_reaches_the_model_only_inside_data_tags(tmp_path):

@@ -160,3 +160,20 @@ def test_over_fixing_extra_keys_are_refused(work):
     state, (answer,) = run(work, [extra])
     assert answer.startswith("ERROR E_NOT_ALLOWED: Key(s) ['batch_size', 'timeout_seconds'] do not need to change")
     assert config(work) == before
+
+
+def test_wrong_source_a_job_cannot_be_pointed_at_a_new_file(tmp_path):
+    """The path is broken and another file with the same columns exists: only the
+    path of the last successful run is accepted, even for a dry run."""
+    import shutil
+    work = tmp_path / "work"
+    seed("wrong_path", JOB, work)
+    shutil.copy(work / "data" / "orders.csv", work / "data" / "orders_backup.csv")
+    before = config(work)
+    decoy = {"job_id": JOB, "changes": {"source_path": "data/orders_backup.csv"}}
+    right = {"job_id": JOB, "changes": {"source_path": "data/orders.csv"}}
+    state, (dry_run, update, repair) = run(work, [("validate_config", decoy), ("update_job_config", decoy), ("update_job_config", right)])
+    assert dry_run.startswith("ERROR E_NOT_ALLOWED: source_path can only be set back")
+    assert update.startswith("ERROR E_NOT_ALLOWED") and "'data/orders.csv'" in update
+    assert json.loads(repair)["status"] == "updated"
+    assert config(work) == {**before, "source_path": "data/orders.csv"}

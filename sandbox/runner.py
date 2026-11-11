@@ -46,7 +46,7 @@ def init_db(work: Path) -> None:
         db.execute(
             "CREATE TABLE IF NOT EXISTS runs (run_id TEXT PRIMARY KEY, job_id TEXT, "
             "status TEXT, error_code TEXT, rows_loaded INTEGER, config_hash TEXT, "
-            "started_at TEXT, ended_at TEXT)"
+            "started_at TEXT, ended_at TEXT, config TEXT)"
         )
 
 
@@ -172,8 +172,9 @@ def run_job(job_id: str, work: Path = WORK) -> dict:
         log.append(f"INFO run finished status={status}")
         with db:
             db.execute(
-                "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (run_id, job_id, status, error_code, loaded, config_hash(config), started, now()),
+                "INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (run_id, job_id, status, error_code, loaded, config_hash(config), started, now(),
+                 json.dumps(config)),
             )
     (work / "logs" / f"{run_id}.log").write_text("\n".join(log) + "\n", encoding="utf-8")
     return {"run_id": run_id, "job_id": job_id, "status": status,

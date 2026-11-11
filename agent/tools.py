@@ -25,6 +25,7 @@ from sandbox.runner import (
 )
 
 WRITE_TOOLS = {"update_job_config", "rerun_job"}  # these need human approval
+ROUTING_KEYS = ("source_path", "target_table")  # where data comes from and where it goes
 
 NAME_PATTERN = r"^[a-z][a-z0-9_]*$"
 JobId = Annotated[str, Field(pattern=NAME_PATTERN, max_length=40, description="Job id, e.g. load_orders")]
@@ -99,15 +100,28 @@ def make_tools(work: Path = WORK) -> list:
             names = [column[0] for column in cursor.description]
             return [dict(zip(names, row)) for row in cursor.fetchall()]
 
+    def last_good_config(job_id: str) -> dict:
+        """The config of the job's most recent successful run ({} if it never succeeded)."""
+        rows = query(
+            "SELECT config FROM runs WHERE job_id = ? AND status = 'success' "
+            "ORDER BY run_id DESC LIMIT 1", job_id,
+        )
+        return json.loads(rows[0]["config"]) if rows else {}
+
     def new_config(job_id: str, changes: ConfigChanges) -> tuple[dict, dict]:
         """Return (current config, config after the changes)."""
         old = get_config(job_id)
         wanted = changes.model_dump(exclude_unset=True)
-        if "target_table" in old and wanted.get("target_table", old["target_table"]) != old["target_table"]:
-            raise ToolError(
-                "E_NOT_ALLOWED", "target_table is already set and cannot be changed.",
-                "Leave target_table out of changes.",
-            )
+        # Where the data comes from and where it goes can only be put back to the value
+        # of the last successful run. No log, note or file name can point a job elsewhere.
+        good = last_good_config(job_id)
+        for key in ROUTING_KEYS:
+            if key in wanted and wanted[key] != old.get(key) and wanted[key] != good.get(key):
+                raise ToolError(
+                    "E_NOT_ALLOWED",
+                    f"{key} can only be set back to the value of this job's last successful run ({good.get(key)!r}).",
+                    "Use that value, or change nothing and report to a human.",
+                )
         return old, {**old, **wanted}
 
     def passes(config: dict) -> bool:
