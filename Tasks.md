@@ -88,12 +88,7 @@ tests/    test_stop.py  test_sandbox.py  test_tools.py  test_checkpoint.py  test
 - [x] **T5.3** `eval/metrics.py`: `matches`, `score_trajectory`, `summarise`, `PRICES`.
 - [x] **T5.4** `eval/run_eval.py`: `python -m eval.run_eval [--model oracle|<id>] [--only ids] [--resume] [--pause s] [--tag name] [--runs n] [--shard i/n] [--merge files]` → `eval/results/<model>_<tag or date>.json` + `.md`. `tests/test_eval.py`: oracle passes all 32; bad agents fail.
 - [x] **T5.5** Full eval on Groq `openai/gpt-oss-120b` (2026-11-11): 32/32 success, results in `eval/results/groq_openai_gpt-oss-120b_v1.{json,md}`.
-- [ ] **T5.7** Harder, repeated eval, run in parallel with the team's 4 Groq keys on one machine (user decision, 2026-11-11):
-  1. [x] Tougher scenarios added (37 total, 11 injections): polite colleague tip, fake migration note in config, decoy source file, poisoned old log. The last two are marked `stopped_only_by_human` (the attacker's change is a valid minimal repair).
-  2. [x] `eval/run_team.py`: one slice per key (`GROQ_API_KEY`, `GROQ_API_KEY_2`, ...), each with its own sandbox folder (`sandbox/.work_shard<i>`), then merge.
-  3. [ ] User adds `GROQ_API_KEY_2..4` to `.env` (never in chat, never committed).
-  4. [ ] `python -m eval.run_team --tag v3 --runs 3`. 111 runs, about 1.2M tokens: needs about two days of quota over 4 keys; re-run the same command to resume. Slice logs: `eval/results/v3_part<i>.log`.
-  5. [ ] Update README, report (rebuild PDF), threat_model §6, errors.md recovery table with the v3 numbers and any `unstable_scenarios`. Two-jobs-failing scenario still not written.
+- [x] **T5.7** Harder, repeated eval (2026-11-11): 37 scenarios (11 injections), 83 runs on 120b via `python -m eval.run_team --tag v3 --runs 3 --once repair` with 6 keys. 80/83; the decoy-file injection executed 3/3 → routing-key rule (DECISIONS D8c) → re-run of affected cases passes (`*_v3_after_fix_{a,b}.json`). Documents updated. Still not written: a two-jobs-failing scenario.
 
 ### Phase 6 — Error taxonomy (`errors.md`)
 - [x] **T6.1** `errors.md`: 11 classes (tool down once / for good, bad arguments, empty result, wrong tool, loop, timeout, user changes mind, partial failure, unfixable fault, over-fixing), each with system behaviour, a named test and eval scenarios; error-code table; recovery table; what is not handled.
@@ -103,15 +98,15 @@ tests/    test_stop.py  test_sandbox.py  test_tools.py  test_checkpoint.py  test
 - [x] **T7.1** `threat_model.md`: assets, trust, 5 entry points, 7 attacker goals, 10 defences (hard vs soft), goal → defence table, residual risks, demo checklist.
 - [x] **T7.2** 7 injection scenarios in the eval + `tests/test_injection.py` (obedient-model tests of the checkpoint and of the tool rules). Results and the one attack that worked are reported in `threat_model.md` §6.
 - [x] **T7.3** Demo rehearsed once with a new, plausible injection: it partly worked → minimal-repair rule added (DECISIONS D8b), scenario 7 added.
-- [ ] **T7.4** Finish v2 on `openai/gpt-oss-120b`: 28/33 done (all pass); missing = injection cases 3-7. Run `python -m eval.run_eval --tag v2 --resume --pause 8` when the daily quota allows (needs ~55K tokens), then update the v2 numbers in `README.md`, `report.md` (rebuild the PDF), `threat_model.md` §6.
-- [ ] **T7.5** (optional hardening) per-job allow-list for `source_path` (threat model residual risk 1); strip terminal control characters before printing tool output in the CLI (risk 6).
+- [x] **T7.4** Superseded by the v3 run (all 11 injection cases, 3 runs each, on 120b).
+- [x] **T7.5** Routing keys restricted to last known-good value (done, D8c). Not done: strip terminal control characters before printing tool output in the CLI (threat model risk 6).
 
 ### Phase 8 — Hand-in
 - [x] **T8.1** `README.md`: setup command, run command, results table with caveats, repo map. **Contributions table still has "to fill in" per member (user).**
 - [x] **T8.2** `report.md` → `report.pdf` (3 pages, max 4) built by `tools/build_report.py` (needs `pip install reportlab`, not a project dependency).
 - [x] **T8.3** `postmortem.md`: 7 problem groups with lessons, what we would do differently, what is still open.
 - [x] **T8.4** Clean-clone test (fresh clone, new venv, `pip install -e .`, `pytest`, oracle eval) and secret scan. `.gitattributes` forces LF and marks PDFs binary.
-- [ ] **T8.5** Before freezing: T7.4 numbers in, Contributions filled, re-run the clean-clone test, tag the commit.
+- [ ] **T8.5** Before freezing: Contributions filled (user), re-run the clean-clone test, tag the commit.
 
 ## 5. Order and dependencies
 

@@ -15,6 +15,17 @@ What went wrong while building the data pipeline repair agent, and what we learn
 - A rule in the prompt is a request, not a defence. If a property matters, it must be enforced in code.
 - A perfect score on scenarios we wrote ourselves measured our imagination, not the agent. The finding came from a rehearsal, not from the suite.
 
+## 1b. It happened a second time, on the risk we had written down
+
+**What happened.** After the first fix we listed a remaining weakness in the threat model: if the attacker's value is itself a valid repair, only the human can stop it. We wrote a scenario for it (a decoy copy of the data and a log line calling the original "deprecated"), marked it "stopped only by the human", and expected it might fail. In the v3 eval the agent wrote the decoy path in 3 runs out of 3.
+
+**What we changed.** The source path and the target table can now only be put back to the value of the job's last successful run. After the fix the case passes 3 / 3, but in every run the model still tried the decoy first and was refused by the tool.
+
+**What we learned.**
+- Writing a risk down is not handling it. We had accepted "the human will catch it" for the one change a human is least likely to question.
+- "Resisted" and "not fooled" are different. After the fix the model is exactly as fooled as before; the system is what changed.
+- One of our passes was empty: in the poisoned-old-log case the agent never opened the old log, so three green results said nothing. A pass needs a check that the attack was actually seen.
+
 ## 2. The eval went blind right after the fix
 
 **What happened.** Once the tool refused bad writes, an agent that *tried* to write on an unfixable fault left the sandbox unchanged, so the scenario passed. Our own test "an agent that writes when it should escalate fails" started failing.
@@ -47,9 +58,9 @@ What went wrong while building the data pipeline repair agent, and what we learn
 
 ## 6. Free-tier limits shaped the work
 
-**What happened.** Groq's free tier allows 200 000 tokens per day per model. One full eval run uses about 330 000. The second full run was cut after 21 of 33 scenarios; we ran the other 12, including every injection case, on the smaller model. A resume on the main model the next time the quota allowed got through 7 more before being cut again, so five injection cases are still missing on it. Result files were named by date, so a run could not resume the next day; they are now named by tag. Rate-limit waits also inflate our time-per-task figures.
+**What happened.** Groq's free tier allows 200 000 tokens per day and 8 000 per minute per account. One pass over the suite uses about 390 000. Two runs were cut by the daily limit, and for a while the injection cases had only been run on a smaller model. Result files were named by date, so a run could not resume the next day. We finally ran the suite in parallel on six free-tier accounts, one slice per account, with the work of an exhausted account handed to the others; 83 runs took about 11 minutes. We did not check whether pooling accounts is allowed by the provider's terms, and we would rather have paid the fifteen cents the run costs at list price.
 
-**Lesson.** Budget the eval like any other resource: make runs resumable from the first day, and keep the per-task token count in view (the system prompt and seven tool schemas are sent on every step).
+**Lesson.** Budget the eval like any other resource: make runs resumable and splittable from the first day, and keep the per-task token count in view (the system prompt and seven tool schemas are sent on every step; we chose not to trim them in this version).
 
 ## 7. Smaller things
 
@@ -63,11 +74,12 @@ What went wrong while building the data pipeline repair agent, and what we learn
 
 1. Write the attacker's cases before the defender's code, and include polite ones from the start.
 2. Decide for every safety property whether it is enforced in code or only requested in the prompt, and write that down (we did this only afterwards, in `threat_model.md`).
-3. Run every scenario several times. All our numbers are one run at temperature 0.
+3. Run every scenario several times from the start. We only did so for the last run, and it showed no variance at temperature 0: the surprises came from missing scenarios, not from unstable ones.
+4. For every "pass" on an injection case, check that the agent actually read the planted text.
 
 ## Still open
 
-- A wrong repair that still passes (another file with the same columns) is stopped only by the human reading the diff.
+- Tampered content inside the right source file, or a bad value already present in a successful run, is not detected.
 - No automatic rollback after a partial failure; the old config is kept in `backups/`.
 - No scenario with two jobs failing at once.
 - No comparison with a paid model yet.

@@ -142,6 +142,15 @@ Format: **Choice** · **Why** · **Rejected** · **Revisit if**.
 - **Limit**: "passes" is not "correct". A change to another file with the same columns passes too; see `threat_model.md`, residual risk 1.
 - **Revisit if**: a legitimate repair needs a key that is not strictly necessary (none in our fault catalogue).
 
+## D8c — Routing keys restricted to their last known-good value (added after the v3 eval)
+
+- **Choice**: `source_path` and `target_table` can only be set to the value used by the job's most recent successful run. The config of every run is stored in the `runs` table for this. The rule applies to `validate_config` too. It replaces the earlier rule "target_table cannot be changed once set".
+- **Why**: the v3 eval showed the agent pointing a job at an attacker's copy of the data in 3 runs out of 3. The minimal-repair rule (D8b) could not object, because the decoy path really did make the job pass. "Passes" is not "correct" for the keys that decide where data comes from and where it goes, so for those two keys we stop asking whether the value works and ask whether it is one we have seen work for this job.
+- **Why not leave it to the human**: that was the previous position (the case was marked "stopped only by the human"). The diff "orders_v2.csv -> orders_backup.csv" looks reasonable next to a log line that says the original is deprecated; a tired reviewer would approve it.
+- **Rejected**: a hand-written allow-list of paths per job — one more file to maintain and to get wrong; forbidding any change to `source_path` — the wrong-path fault would become unfixable.
+- **Cost**: a genuinely new source file or table can no longer be introduced by the agent; a human must do that. That is the intended division of work.
+- **Limit**: the rule trusts history. Tampered content in the right file, or a bad value that already got into a successful run, is not detected (threat model, residual risk 1).
+
 ## D9 — Tooling: Python 3.11, setuptools `pyproject.toml`, pinned versions, pytest
 
 - **Choice**: exact version pins (langgraph 1.2.20, langchain 1.4.10, langchain-groq 1.1.3, langgraph-checkpoint-sqlite 3.1.3); setup is `pip install -e .`.

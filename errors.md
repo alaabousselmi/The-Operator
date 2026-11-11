@@ -22,6 +22,7 @@ Two kinds of evidence are given for each class:
 | 9 | **Partial failure** | Step 3 of 5: config updated, then the re-run cannot be started; or a limit stops the run mid-repair | The run ends cleanly and the final note lists the writes already done. The old config is in `backups/`. Because both writes are idempotent, running the agent again finishes the job: the update answers `no_change` and only the re-run happens. | `test_partial_failure_step_3_of_5_fails_and_a_second_run_finishes_the_job`, `test_stopped_by_a_limit_mid_repair_reports_the_writes_done` | `toolfail_rerun_unavailable_once` |
 | 10 | **Unfixable fault** | Damaged data line, deleted source file | No config change can make the job pass, so `update_job_config` refuses every change (`E_NOT_ALLOWED: The job would still fail`), and `rerun_job` starts no new run for an unchanged config. The agent is told to change nothing and escalate to a human. | `test_unfixable_fault_no_config_write_is_accepted` | `nofix_corrupt_source_*`, `nofix_source_deleted_customers` |
 | 11 | **Over-fixing** | The repair plus changes nobody needs (what an injected "known fix" asks for) | `update_job_config` accepts only a minimal repair: every changed key must be necessary for the job to pass. Extra keys are refused by name. | `test_over_fixing_extra_keys_are_refused` | `inject_log_plausible_operator_note` |
+| 12 | **Wrong source or target** | The path is broken and another file with the same columns exists; or the table key is missing | `source_path` and `target_table` can only be set back to the value of the job's last successful run; anything else is refused, even in a dry run, and the error names the known-good value. | `test_wrong_source_a_job_cannot_be_pointed_at_a_new_file` | `inject_log_decoy_source_file`, `inject_old_log_wrong_table_name`, `repair_wrong_path_*`, `repair_missing_key_*` |
 
 ## How errors reach the model
 
@@ -35,7 +36,7 @@ ERROR <CODE>: <what happened>. <what to do next>.
 |---|---|---|
 | `E_BAD_ARGUMENTS` | The schema rejected the arguments | Fix the named field and call again |
 | `E_NOT_FOUND` | Unknown job or run id (the message lists valid ones) | Use a valid id |
-| `E_NOT_ALLOWED` | The write is not a minimal repair of a failing job | Do not insist; send only the needed keys, or stop |
+| `E_NOT_ALLOWED` | The write is not a minimal repair of a failing job, or it points the job at a new source or table | Do not insist; send only the needed keys, or stop |
 | `E_TOOL_UNAVAILABLE`, `E_TOOL_TIMEOUT` | The tool did not answer | Retry once |
 | `E_TOOL_FAILED` | Unexpected failure inside a tool | Retry once, then stop and report |
 | `REJECTED by the human reviewer` | The human said no | Follow the reason, or stop and report |
@@ -48,10 +49,11 @@ Job failures (`E_DATE_FORMAT`, `E_COLUMN_MISSING`, `E_SOURCE_NOT_FOUND`, `E_OUT_
 
 | Run | Model | Recovered |
 |---|---|---|
-| 2026-11-11 (v1) | Groq `openai/gpt-oss-120b` | 5 / 5 |
-| 2026-11-11 (v2, after the minimal-repair rule) | Groq `openai/gpt-oss-120b` | 5 / 5 |
+| v1 (one run each) | Groq `openai/gpt-oss-120b` | 5 / 5 |
+| v2 (one run each, after the minimal-repair rule) | Groq `openai/gpt-oss-120b` | 5 / 5 |
+| v3 (three runs each) | Groq `openai/gpt-oss-120b` | 15 / 15 |
 
-Five scenarios, one run each: this shows the mechanism works, not a precise rate. Later runs are added to this table.
+With the update tool permanently down (v3, three runs) the agent stopped without writing 3 / 3 times. No scenario gave mixed results across runs.
 
 ## What is not handled
 
