@@ -8,6 +8,7 @@ Rules for every task:
 - Update `Progress.md` after each task (status, decisions, gotchas). Tick the box here.
 - One commit per task, pushed to GitHub. No credentials in the repo (`.env` is git-ignored).
 - Every line must be explainable at the demo: keep code small and plain.
+- Every technical choice gets an entry in `DECISIONS.md` (choice, why, rejected, revisit-if) before code depends on it.
 
 ## 1. What we are building
 
@@ -38,7 +39,7 @@ Docs: https://docs.langchain.com/oss/python/langgraph/overview (pages: interrupt
 
 ```
 README.md  errors.md  threat_model.md  postmortem.md  report.pdf
-Tasks.md  Progress.md  pyproject.toml  .env.example  .gitignore
+Tasks.md  Progress.md  DECISIONS.md  pyproject.toml  .env.example  .gitignore
 agent/    state.py  tools.py  graph.py  stop.py  checkpoint.py  logging.py  prompts.py  cli.py
 sandbox/  runner.py  seed.py  reset.py  faults.py  templates/   (runtime data in sandbox/.work/, git-ignored)
 eval/     scenarios/*.yaml  run_eval.py  metrics.py  fake_model.py  results/
@@ -50,8 +51,9 @@ tests/    test_stop.py  test_tools.py  test_idempotency.py  test_checkpoint.py  
 ### Phase 0 — Setup
 - [x] **T0.1** Read brief, write `Tasks.md` + `Progress.md`, `git init`, first commit.
 - [x] **T0.2** Create GitHub repo and push (`origin` = github.com/alaabousselmi/The-Operator).
-- [ ] **T0.3** Decide LLM provider + model (user decision). Code stays provider-neutral via `init_chat_model(os.environ["OPERATOR_MODEL"])`.
-- [ ] **T0.4** `pyproject.toml` with pinned deps (`langgraph`, `langchain`, provider package, `langgraph-checkpoint-sqlite`, `pydantic`, `pyyaml`, `pytest`), `.gitignore`, `.env.example`. One setup command: `pip install -e .`. (Topic approved by instructor.)
+- [x] **T0.3** LLM chosen: Groq `openai/gpt-oss-120b` for v1, paid model compared later (DECISIONS.md D2). Model read from env `OPERATOR_MODEL`.
+- [x] **T0.4** `pyproject.toml` with pinned deps, `.gitignore`, `.env.example`, empty packages. Setup command: `pip install -e .`. Topic approved by instructor.
+- [ ] **T0.5** (user) Create a Groq API key, put it in `.env`, and note the real free-tier limits from the Groq console Limits page in DECISIONS.md D2. Needed before T5.5 only.
 
 ### Phase 1 — Stop rule first (brief: "Write the stopping condition first")
 - [ ] **T1.1** `agent/state.py`: `AgentState` = messages (`add_messages`), `remaining_steps: RemainingSteps`, `tokens_used: int`, `stop_reason: str | None`.
@@ -86,7 +88,8 @@ Each tool: clear verb_noun name, pydantic `args_schema` with `extra="forbid"`, e
 - [ ] **T5.2** Write ≥ 30 scenarios: ~14 normal repairs (2 per fault type), ~6 tool-failure cases (tool down once, timeout, empty result), ~3 no-fix/escalate cases, ~2 human-reject cases, ≥ 5 injection cases (T7.2).
 - [ ] **T5.3** `eval/metrics.py` from the trajectory (tool-call log + messages): step accuracy, tool-call precision (tool + args), wasted steps, task success (final sandbox state check, AND no forbidden action — right answer after a dangerous path = fail), recovery-after-failure rate, injection results, stop rule never exceeded, steps / tokens / cost per task, p50 / p95 time.
 - [ ] **T5.4** `eval/run_eval.py`: one command, resets sandbox per scenario, writes `eval/results/<date>.json` + a markdown table. Cost model: price per token × measured tokens, and projection at 100× volume.
-- [ ] **T5.5** Run the full eval with the real model; fix agent problems found; record each problem in `postmortem.md` notes.
+- [ ] **T5.5** Run the full eval on Groq (throttled with `InMemoryRateLimiter`, resumable; may need two days of quota); fix agent problems found; record each in `postmortem.md` notes.
+- [ ] **T5.6** Once v1 is stable: run the same eval on one paid model (set `OPERATOR_MODEL`, add its provider package); report Groq vs paid on success, injection and cost.
 
 ### Phase 6 — Error taxonomy (`errors.md`)
 - [ ] **T6.1** One row per class with *agent behaviour* + *named test*: tool down, bad arguments, empty result, wrong tool, loop (same call repeated), timeout, user changes mind, partial failure (step 3 of 5), unfixable fault.
